@@ -1,0 +1,8 @@
+# MANIFEST.in
+exclude .gitignore
+exclude .coverage
+exclude htmlcov
+exclude installers
+include README.md
+prune .git
+recursive-exclude *.egg-info *

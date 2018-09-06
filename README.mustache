@@ -1,0 +1,55 @@
+# sykle
+
+Pretty much every project needs a way to run tests, a way to deploy, a way to build, etc. Sykle takes advantage of `docker-compose` to cut down on the setup required for those universal tasks while remaining flexible to different product requirements.
+
+### Requirements
+
+- `docker` (locally and on deployment target)
+- `docker-compose` (locally and on deployment target)
+- `ssh` 
+- `scp`
+
+### Installation
+
+`pip install git+ssh://git@github.com/typecode/sykle.git`
+
+### Configuration
+
+Because sykle tries to make as few assumptions about your project as possible, you'll need to declaritively define how your app should run via static configuration files
+
+#### Docker Compose
+
+Sykle uses 4 different docker-compose configurations:
+
+- `docker-compose.yml` for development
+- `docker-compose.test.yml` for testing
+- `docker-compose.prod-build.yml` for building/deploying production
+- `docker-compose.prod.yml` for running production
+
+These separate configurations allow you to tweak how your projects run in those 4 standard scenarios, and helps ensure clean test runs, predictable builds, and conflict prevention when running different tasks in parallel.
+
+#### .sykle.json
+
+In addition to your `docker-compose` files, you'll need a `.sykle.json`. This tells sykle the name of your project, where to deploy it, what to do before deploying, what `docker-compose` service should be used when none is specified, how to run unit tests, and how to run end to end tests. It also provides an `aliases` section for defining shortcuts for commonly used project specific commands.
+
+*Example:*
+```json
+{{{sykle_example}}}
+```
+
+### Usage
+
+Usage instructions can be viewed after installation with `sykle --help`
+
+```
+{{{usage}}}
+```
+
+### Roadmap
+
+- [x] Move to separate repo
+- [x] Allow user to specify `test` commands
+- [ ] Terraform support
+- [ ] REAMDE.md generation on push to repo
+- [ ] Add `init` command to create `.sykle.json`
+- [ ] Revisit whether `docker-compose` files can/should be shared
