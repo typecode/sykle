@@ -38,7 +38,9 @@ class DCRunner():
         base_command = (
             ['docker-compose'] +
             self.project_command +
-            ['-f', self.docker_compose_file]
+            # NB: we want to always recreate volumes to ensure we never
+            #     reference volumes with the same name from an old build
+            ['-f', self.docker_compose_file, '--force-recreate']
         )
 
         try:

@@ -97,7 +97,7 @@ class Sykle():
     def up(self, docker_type='dev'):
         """Starts up relevant docker compose services"""
         self.dc(
-            input=['up', '--build', '--force-recreate'],
+            input=['up', '--build'],
             docker_type=docker_type
         )
 
