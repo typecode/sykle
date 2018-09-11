@@ -52,7 +52,6 @@ Description:
 from .sykle import Sykle
 from . import __version__
 from docopt import docopt
-from collections import deque
 import json
 
 
@@ -111,9 +110,14 @@ def main():
     elif args['deploy']:
         sykle.deploy(env_file=args['--env'])
     else:
-        input = deque(input)
-        alias = input.popleft()
-        if aliases.get(alias):
-            sykle.run_alias(alias=alias, input=input)
-        else:
-            raise Exception("Unknown command '{}'".format(alias))
+        try:
+            alias = input[0] if len(input) > 0 else None
+            input = input[1:] if len(input) > 1 else []
+            if aliases.get(alias):
+                sykle.run_alias(alias=alias, input=input)
+            else:
+                print('Unknown alias "{}"'.format(alias))
+                print(__doc__)
+        except Exception as e:
+            print(e)
+            pass
