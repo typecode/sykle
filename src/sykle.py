@@ -62,6 +62,7 @@ class Sykle():
         """Runs a command with the correct docker compose file(s)"""
         _docker_vars = self.docker_vars.copy()
         _docker_vars.update(docker_vars)
+
         DCRunner(
             type=docker_type,
             project_name=self.project_name,
@@ -70,9 +71,20 @@ class Sykle():
         ).call(input)
 
     def dc_run(self, input, service=None, docker_type='dev'):
-        """Runs a command in a docker compose service"""
+        """
+        Spins up and runs a command on a container representing a
+        docker compose service
+        """
         self.dc(
             input=['run', '--rm', service or self.default_service] + input,
+            docker_type=docker_type,
+        )
+
+    def dc_exec(self, input, service=None, docker_type='dev'):
+        """Runs a command on a running service container"""
+        input = ['sh', '-c'] + input
+        self.dc(
+            input=['exec', service or self.default_service] + input,
             docker_type=docker_type,
         )
 
@@ -162,7 +174,7 @@ class Sykle():
         self.push()
         self.deployment_cp([env_file or '.env'], dest='~/.env')
         self.deployment_cp(['docker-compose.prod.yml'])
-        self.deployment_exec(['docker', 'system',  'prune', '-a', '--force'])
+        self.deployment_exec(['docker', 'system', 'prune', '-a', '--force'])
 
         remote_docker_command = self.docker_vars_command + [
             'BUILD_NUMBER=latest', 'docker-compose',
@@ -174,11 +186,14 @@ class Sykle():
 
     def run_alias(self, alias, input=[], docker_type=None):
         alias_config = self.aliases.get(alias)
+        is_exec = alias_config.get('exec', False)
         command = alias_config['command'].split(' ') + input
         service = alias_config['service']
-        if docker_type:
-            self.dc_run(
-                input=command, service=service, docker_type=docker_type
-            )
+        kwargs = {'input': command, 'service': service}
+
+        if is_exec:
+            self.dc_exec(**kwargs)
+        elif docker_type:
+            self.dc_run(docker_type=docker_type, **kwargs)
         else:
-            self.dc_run(input=command, service=service)
+            self.dc_run(**kwargs)

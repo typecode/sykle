@@ -1,8 +1,11 @@
+#!/usr/bin/python
+
 """Sykle CLI
 
 Usage:
   syk dc [--debug] [--config=<file>] [--test | --prod | --prod-build] [INPUT ...]
   syk dc_run [--debug] [--config=<file>] [--service=<service>] [--test | --prod | --prod-build] [INPUT ...]
+  syk dc_exec [--debug] [--config=<file>] [--service=<service>] [INPUT ...]
   syk build [--debug] [--config=<file>] [--test | --prod]
   syk up [--debug] [--config=<file>] [--test | --prod]
   syk down [--debug] [--config=<file>] [--test | --prod]
@@ -29,7 +32,8 @@ Options:
 
 Description:
   dc              Runs docker-compose command
-  dc_run          Runs command on a docker-compose service
+  dc_run          Spins up and runs a command on a docker-compose service
+  dc_exec         Runs a command on an existing docker-compose container
   build           Builds docker-compose images
   up              Starts docker-compose
   down            Stops docker-compose
@@ -89,6 +93,8 @@ def main():
         sykle.dc(input=input, docker_type=docker_type)
     elif args['dc_run']:
         sykle.dc_run(input=input, docker_type=docker_type, service=service)
+    elif args['dc_exec']:
+        sykle.dc_exec(input=input, docker_type=docker_type, service=service)
     elif args['build']:
         sykle.build(docker_type=docker_type)
     elif args['up']:
