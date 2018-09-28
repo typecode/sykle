@@ -1,33 +1,68 @@
 {
+    "version": 1,
     "project_name": "cool-project",
-    "deployment_target": "ubuntu@some-cool-project.com",
     "default_service": "django",
+    "default_deployment": "staging",
     "unittest": [
-      {
-        "service": "django",
-        "command": "django-admin test"
-      },
-      {
-        "service": "node",
-        "command": "npm test"
-      }
+        {
+            "service": "django",
+            "command": "django-admin test"
+        },
+        {
+            "service": "node",
+            "command": "npm test"
+        }
     ],
     "e2e": [
-      {
-        "service": "django",
-        "command": "behave"
-      }
+        {
+            "service": "django",
+            "command": "behave"
+        }
     ],
-    "aliases": {
-      "dj": {
-        "service": "django",
-        "command": "django-admin"
-      }
-    },
     "predeploy": [
-      {
-        "service": "django",
-        "command": "django-admin collectstatic --no-input"
+        {
+            "service": "django",
+            "command": "django-admin collectstatic --no-input"
+        }
+    ],
+    "deployments": {
+        "prod": {
+            "target": "ec2-user@www.my-site.com",
+            "env_file": ".env.prod",
+        },
+        "staging": {
+            "target": "ect-user@staging.my-site.com",
+            "env_file": ".env.staging",
+        }
+    },
+    "aliases": {
+        "dj": {
+            "service": "django",
+            "command": "django-admin"
+        }
+    },
+    "docker_vars": {},
+    "plugins": {
+      "sync_pg_data": {
+        "staging": {
+          "env_file": ".env.staging",
+          "args": {
+            "HOST": "storefront.staging.sharptype.co",
+            "PASSWORD": "$POSTGRES_PASSWORD",
+            "USER": "$POSTGRES_USER",
+            "NAME": "$POSTGRES_DB"
+          }
+        },
+        "local": {
+          "env_file": ".env",
+          "args": {
+            "HOST": "localhost",
+            "PASSWORD": "thisisbogus",
+            "USER": "sharptype",
+            "NAME": "sharptype",
+            "PORT": 8887
+          }
+        }
       }
-    ]
+    }
 }

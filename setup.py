@@ -14,8 +14,8 @@ setup(
         'Natural Language :: English',
         'Programming Language :: Python :: 3.4',
     ],
-    packages=['src'],
-    install_requires=['docopt'],
+    packages=['src', 'plugins.sync_pg_data', 'plugins.sync_s3'],
+    install_requires=['docopt', 'python-dotenv', 'boto3'],
     entry_points={
         'console_scripts': [
             'syk=src.cli:main',

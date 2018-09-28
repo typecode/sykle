@@ -1,0 +1,4 @@
+python create_readme.py
+git add README.md
+git add */README.md
+git commit -m "Update README"
