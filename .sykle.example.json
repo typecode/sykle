@@ -55,6 +55,7 @@
         },
         "local": {
           "env_file": ".env",
+          "write": true,
           "args": {
             "HOST": "localhost",
             "PASSWORD": "thisisbogus",

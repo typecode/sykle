@@ -16,6 +16,7 @@ Usage:
   syk ssh_cp [--debug] [--config=<file>] [--dest=<dest>] [INPUT ...]
   syk ssh_exec [--debug] [--config=<file>] [INPUT ...]
   syk deploy [--debug] [--config=<file>] [--env=<env_file>] [--location=<location>]
+  syk init
   syk plugins
   syk [--debug] [--config=<file>] [INPUT ...]
 
@@ -25,7 +26,7 @@ Options:
   --test                  Run command with test compose file
   --prod                  Run command with prod compose file
   --prod-build            Run command with prod-build compose file
-  --config=<file>         Specify JSON config file [default: .sykle.json]
+  --config=<file>         Specify JSON config file
   --dest=<dest>           Destination path [default: ~]
   --env=<env_file>        Env file to use [default: .env]
   --service=<service>     Docker service on which to run the command
@@ -46,6 +47,7 @@ Description:
   ssh_cp          Copies file to ssh target home directory
   ssh_exec        Executes command on ssh target
   deploy          Deploys and starts latest builds on ssh target
+  init            Creates a blank config file
   plugins         Lists available plugins
 
 .sykle.json:
@@ -67,13 +69,16 @@ from docopt import docopt
 def main():
     args = docopt(__doc__, version=__version__, options_first=True)
 
-    config = Config.from_file(args['--config'])
+    if args['init']:
+        Sykle.init()
+        return
+
+    config = Config.from_file(args['--config'] or Config.FILENAME)
     input = args['INPUT']
     aliases = config.aliases
     service = args['--service'] or config.default_service
     plugins = Plugins(config=config)
     location = args['--location'] or config.default_deployment
-    deployment_config = config.for_deployment(location)
 
     docker_type = 'dev'
     if args['--test']:
@@ -112,15 +117,22 @@ def main():
     elif args['push']:
         sykle.push()
     elif args['ssh_cp']:
+        # NB: we're not calling ".for_deployment" at the top of this file
+        #     because we only want to get/validate deployment configs when
+        #     we're using them
+        deployment_config = config.for_deployment(location)
         sykle.deployment_cp(
             input=input, dest=args['--dest'],
             target=deployment_config['target']
         )
     elif args['ssh_exec']:
+        deployment_config = config.for_deployment(location)
         sykle.deployment_exec(input=input, target=deployment_config['target'])
     elif args['ssh']:
+        deployment_config = config.for_deployment(location)
         sykle.deployment_ssh(target=deployment_config['target'])
     elif args['deploy']:
+        deployment_config = config.for_deployment(location)
         env_file = deployment_config.get('env_file', args['--env'])
         target = deployment_config['target']
         sykle.deploy(target=target, env_file=env_file)

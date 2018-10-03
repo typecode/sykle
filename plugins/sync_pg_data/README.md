@@ -11,8 +11,12 @@ Wrapper around `pg_dump` and `psql` that allows you to sync data from one locati
 
 ### Requirements
 
-- `pgdump`
-- `psql`
+- `pg_dump` (tested with version 10.5)
+- `psql` (tested with version 10.5)
+
+### Safety Features
+
+Sometimes there are databases that you always want to read from and never sync data to (like production). In order to prevent users from accidentally overwriting databases, you must explicitly add set the "WRITE" property on a location configuration to true in order to copy data to that location
 
 ### Usage
 
@@ -35,11 +39,15 @@ Example .sykle.json:
   {
      "plugins": {
         "sync_pg_data": {
-            "local": {               // Name of location
-               "PORT": 5432,         // Port for postgres (OPTIONAL)
-               "HOST": "localhost",  // Host for postgres
-               "USER": "postgres",   // Username for postgres
-               "PASSWORD": "asdf"    // Password for postgres
+            "local": {                   // Name of location
+                "env_file": ".env",      // Envfile for args to use (OPTIONAL)
+                "write": true,           // Allow writes to location
+                "args": {
+                   "PORT": 5432,         // Port for postgres (OPTIONAL)
+                   "HOST": "$PG_HOST",   // Host for postgres
+                   "USER": "postgres",   // Username for postgres
+                   "PASSWORD": "asdf"    // Password for postgres
+                }
             }
         }
      }

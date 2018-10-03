@@ -5,6 +5,7 @@ import dotenv
 class Config():
     REQUIRED_VERSION = 1
     WEBSITE = 'https://github.com/typecode/sykle'
+    FILENAME = '.sykle.json'
 
     @staticmethod
     def from_file(filename):
@@ -56,8 +57,9 @@ class Config():
     def __init__(
         self, project_name, default_service, default_deployment, plugins={},
         docker_vars={}, aliases={}, unittest=[], e2e=[], predeploy=[],
-        deployments={},
+        deployments={}, version=None,
     ):
+        self.version = version
         self.project_name = project_name
         self.docker_vars = docker_vars
         self.default_deployment = default_deployment

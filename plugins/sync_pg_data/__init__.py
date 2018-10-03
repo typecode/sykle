@@ -14,11 +14,15 @@ Example .sykle.json:
   {
      "plugins": {
         "sync_pg_data": {
-            "local": {               // Name of location
-               "PORT": 5432,         // Port for postgres (OPTIONAL)
-               "HOST": "localhost",  // Host for postgres
-               "USER": "postgres",   // Username for postgres
-               "PASSWORD": "asdf"    // Password for postgres
+            "local": {                   // Name of location
+                "env_file": ".env",      // Envfile for args to use (OPTIONAL)
+                "write": true,           // Allow writes to location
+                "args": {
+                   "PORT": 5432,         // Port for postgres (OPTIONAL)
+                   "HOST": "$PG_HOST",   // Host for postgres
+                   "USER": "postgres",   // Username for postgres
+                   "PASSWORD": "asdf"    // Password for postgres
+                }
             }
         }
      }
@@ -48,7 +52,7 @@ class Plugin(IPlugin):
         args = location.get('args')
 
         if args is None:
-            raise Exception('Config for "{}" needs "args"!')
+            raise Exception('Config for "{}" needs "args"!'.format(location_name))
 
         for k in Plugin.REQUIRED_ARGS:
             try:
@@ -60,8 +64,7 @@ class Plugin(IPlugin):
             args = Config.interpolate_env_values_from_file(args, env_file)
         return args
 
-    def dump(self, source_name, debug=False):
-        args = self._get_location_args(source_name)
+    def dump(self, args, debug=False):
         call_subprocess(
             command=[
                 'pg_dump', '-C', '-h', args['HOST'],
@@ -73,8 +76,7 @@ class Plugin(IPlugin):
             debug=debug
         )
 
-    def restore(self, dest_name, debug=False):
-        args = self._get_location_args(dest_name)
+    def restore(self, args, debug=False):
         call_subprocess(
             command=[
                 'psql', '-h', args['HOST'],
@@ -88,6 +90,12 @@ class Plugin(IPlugin):
 
     def run(self):
         args = docopt(__doc__, version=__version__)
-        self.dump(args['--src'], args['--debug'])
-        self.restore(args['--dest'], args['--debug'])
+        src_args = self._get_location_args(args['--src'])
+        dest_args = self._get_location_args(args['--dest'])
+
+        if not self.config.get(args['--dest']).get('write'):
+            raise Exception('Cannot copy data to "{}" ("WRITE" is not set to true)'.format(args['--dest']))
+
+        self.dump(src_args, args['--debug'])
+        self.restore(dest_args, args['--debug'])
         os.remove(self.temp_dump_file)

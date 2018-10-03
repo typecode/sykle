@@ -1,5 +1,9 @@
 from .dc_runner import DCRunner
 from .call_subprocess import call_subprocess
+from .config import Config
+import os.path
+import json
+import collections
 
 
 class Sykle():
@@ -29,6 +33,25 @@ class Sykle():
         self.e2e_config = e2e_config
         self.predeploy_config = predeploy_config
         self.unittest_config = unittest_config
+
+    @staticmethod
+    def init():
+        if os.path.isfile(Config.FILENAME):
+            print('"{}" already exsits'.format(Config.FILENAME))
+        else:
+            with open(Config.FILENAME, 'w+') as file:
+                json.dump(collections.OrderedDict([
+                    ("version", 1),
+                    ("project_name", None),
+                    ("default_deployment", "staging"),
+                    ("default_service", None),
+                    ("unittest", [{"service": None, "command": None}]),
+                    ("e2e", [{"service": None, "command": None}]),
+                    ("aliases", {}),
+                    ("predeploy", []),
+                    ("deployments", {"staging": {"env_file": None, "target": None}}),
+                    ("plugins", {})
+                ]), file, indent=2)
 
     @property
     def docker_vars_command(self):

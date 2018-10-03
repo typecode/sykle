@@ -106,6 +106,7 @@ In addition to your `docker-compose` files, you'll need a `.sykle.json`. See bel
         },
         "local": {
           "env_file": ".env",
+          "write": true,
           "args": {
             "HOST": "localhost",
             "PASSWORD": "thisisbogus",
@@ -141,6 +142,7 @@ Usage:
   syk ssh_cp [--debug] [--config=<file>] [--dest=<dest>] [INPUT ...]
   syk ssh_exec [--debug] [--config=<file>] [INPUT ...]
   syk deploy [--debug] [--config=<file>] [--env=<env_file>] [--location=<location>]
+  syk init
   syk plugins
   syk [--debug] [--config=<file>] [INPUT ...]
 
@@ -150,7 +152,7 @@ Options:
   --test                  Run command with test compose file
   --prod                  Run command with prod compose file
   --prod-build            Run command with prod-build compose file
-  --config=<file>         Specify JSON config file [default: .sykle.json]
+  --config=<file>         Specify JSON config file
   --dest=<dest>           Destination path [default: ~]
   --env=<env_file>        Env file to use [default: .env]
   --service=<service>     Docker service on which to run the command
@@ -171,6 +173,7 @@ Description:
   ssh_cp          Copies file to ssh target home directory
   ssh_exec        Executes command on ssh target
   deploy          Deploys and starts latest builds on ssh target
+  init            Creates a blank config file
   plugins         Lists available plugins
 
 .sykle.json:
@@ -210,6 +213,6 @@ Any `README.mustache` defined in a plugin folder will have a usage variable prov
 - [x] Allow user to specify `test` commands
 - [x] Add plugins
 - [x] REAMDE.md generation on ~push to repo~ commit
+- [x] Add `init` command to create `.sykle.json`
 - [ ] Terraform support
-- [ ] Add `init` command to create `.sykle.json`
 - [ ] Revisit whether `docker-compose` files can/should be shared
