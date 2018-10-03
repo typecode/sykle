@@ -31,8 +31,8 @@ Usage:
 Options:
   -h --help         Show help info
   --version         Show version
-  --src=<name>      Specify where to pull data from [default: staging]
-  --dest=<name>     Specify where to push data to [default: local]
+  --src=<name>      Specify where to pull data from
+  --dest=<name>     Specify where to push data to
   --debug           Print debug information
 
 Example .sykle.json:
