@@ -16,7 +16,7 @@ Wrapper around `pg_dump` and `psql` that allows you to sync data from one locati
 
 ### Safety Features
 
-Sometimes there are databases that you always want to read from and never sync data to (like production). In order to prevent users from accidentally overwriting databases, you must explicitly add set the "WRITE" property on a location configuration to true in order to copy data to that location
+Sometimes there are databases that you always want to read from and never sync data to (like production). In order to prevent users from accidentally overwriting databases, you must explicitly set the "write" property on a location configuration to true in order to copy data to that location
 
 ### Usage
 
