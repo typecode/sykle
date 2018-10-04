@@ -1,5 +1,9 @@
 from .dc_runner import DCRunner
 from .call_subprocess import call_subprocess
+from .config import Config
+import os.path
+import json
+import collections
 
 
 class Sykle():
@@ -7,8 +11,7 @@ class Sykle():
     Class for programatically invoking Sykle
     """
     def __init__(
-        self, deployment_target=None,
-        project_name='sykle-project',
+        self, project_name='sykle-project',
         unittest_config=[], e2e_config=[],
         predeploy_config=[], debug=False,
         docker_vars={}, aliases={}
@@ -20,7 +23,6 @@ class Sykle():
             unittest_config (array[dict]): Array of unittest configs
             e2e_config (array[dict]): Array of end to end test configs
             predeploy_config (array[dict]): Array with predeploy steps
-            deployment_target (str): SSH address of deployment target
             aliases (dict): Dictionary defining custom commands
             docker_vars (str): Vars used in docker-compose/docker files
         """
@@ -31,15 +33,25 @@ class Sykle():
         self.e2e_config = e2e_config
         self.predeploy_config = predeploy_config
         self.unittest_config = unittest_config
-        # NB: we ONLY want throw errors for these varialbes if they're USED
-        self._deployment_target = deployment_target
 
-    @property
-    def deployment_target(self):
-        """Throws error if there is no deployment target"""
-        if not self._deployment_target:
-            raise Exception('No deployment target found!')
-        return self._deployment_target
+    @staticmethod
+    def init():
+        if os.path.isfile(Config.FILENAME):
+            print('"{}" already exsits'.format(Config.FILENAME))
+        else:
+            with open(Config.FILENAME, 'w+') as file:
+                json.dump(collections.OrderedDict([
+                    ("version", 1),
+                    ("project_name", None),
+                    ("default_deployment", "staging"),
+                    ("default_service", None),
+                    ("unittest", [{"service": None, "command": None}]),
+                    ("e2e", [{"service": None, "command": None}]),
+                    ("aliases", {}),
+                    ("predeploy", []),
+                    ("deployments", {"staging": {"env_file": None, "target": None}}),
+                    ("plugins", {})
+                ]), file, indent=2)
 
     @property
     def docker_vars_command(self):
@@ -139,23 +151,22 @@ class Sykle():
         self.dc(['push'], docker_type='prod-build')
         self.dc(['push'], docker_type='prod-build', docker_vars={'BUILD_NUMBER': 'latest'})
 
-    def deployment_cp(self, input, dest='~'):
+    def deployment_cp(self, input, target, dest='~'):
         """Copies a file to the deployment"""
         command = ['scp', '-o', 'StrictHostKeyChecking=no']
         command += input
-        command += [self.deployment_target + ":{}".format(dest)]
+        command += [target + ":{}".format(dest)]
         call_subprocess(command, debug=self.debug)
 
-    def deployment_exec(self, input):
+    def deployment_exec(self, input, target):
         """Runs a command on the deployment"""
-        target = self.deployment_target
         command = ['ssh', '-o', 'StrictHostKeyChecking=no', target]
         command += input
         call_subprocess(command, debug=self.debug)
 
-    def deployment_ssh(self):
+    def deployment_ssh(self, target):
         """Opens an ssh connection to the deployment"""
-        call_subprocess(['ssh', self.deployment_target], debug=self.debug)
+        call_subprocess(['ssh', target], debug=self.debug)
 
     def predeploy(self):
         for config in self.predeploy_config:
@@ -164,7 +175,7 @@ class Sykle():
                 service=config['service'], docker_type='prod-build'
             )
 
-    def deploy(self, env_file=None):
+    def deploy(self, target, env_file=None):
         """Deploys docker images/static assets and starts services
 
         Parameters:
@@ -172,17 +183,19 @@ class Sykle():
         """
         self.predeploy()
         self.push()
-        self.deployment_cp([env_file or '.env'], dest='~/.env')
-        self.deployment_cp(['docker-compose.prod.yml'])
-        self.deployment_exec(['docker', 'system', 'prune', '-a', '--force'])
+        self.deployment_cp([env_file or '.env'], target=target, dest='~/.env')
+        self.deployment_cp(['docker-compose.prod.yml'], target=target)
+        self.deployment_exec(
+            ['docker', 'system', 'prune', '-a', '--force'], target=target
+        )
 
         remote_docker_command = self.docker_vars_command + [
             'BUILD_NUMBER=latest', 'docker-compose',
             '-f', 'docker-compose.prod.yml'
         ]
 
-        self.deployment_exec(remote_docker_command + ['pull'])
-        self.deployment_exec(remote_docker_command + ['up', '-d'])
+        self.deployment_exec(remote_docker_command + ['pull'], target=target)
+        self.deployment_exec(remote_docker_command + ['up', '-d'], target=target)
 
     def run_alias(self, alias, input=[], docker_type=None):
         alias_config = self.aliases.get(alias)

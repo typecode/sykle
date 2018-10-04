@@ -45,7 +45,7 @@ class DCRunner():
             call_subprocess(
                 base_command + input,
                 debug=self.debug,
-                docker_vars=self.docker_vars
+                env=self.docker_vars
             )
         except KeyboardInterrupt:
             print('Exiting...')
