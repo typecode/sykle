@@ -38,7 +38,7 @@ Example .sykle.json:
   }
 """
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 from src.call_subprocess import call_subprocess
 from src.plugins import IPlugin
@@ -212,7 +212,7 @@ class Plugin(IPlugin):
         else:
             self.check_write_permissions(dest)
             dump_file = self.get_dump_file_name(src)
-            if self.confirm_delete(dest) and self.confirm_dump():
+            if self.confirm_delete(dest) and self.confirm_dump(dump_file):
                 self.dump(src, dump_file, debug)
                 self.truncate(dest, debug)
                 self.restore(dest, dump_file, debug)
