@@ -38,7 +38,7 @@ Example .sykle.json:
   }
 """
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 from src.call_subprocess import call_subprocess
 from src.plugins import IPlugin
@@ -122,6 +122,7 @@ class Plugin(IPlugin):
                 '--port', str(args.get('PORT', 5432)),
                 '--dbname', args['NAME'],
                 '--disable-triggers', restore_file,
+                '--data-only'
             ],
             env={'PGPASSWORD': str(args['PASSWORD'])},
             debug=debug
@@ -174,6 +175,8 @@ class Plugin(IPlugin):
     def confirm_restore(self, restore_file, location):
         if not restore_file:
             raise Exception('No restore file!')
+        if not os.path.isfile(restore_file):
+            raise Exception('{} does not exist!'.format(restore_file))
         return input(
             "Restore '{}' to '{}'? (y/n): "
             .format(restore_file, location)) == 'y'
