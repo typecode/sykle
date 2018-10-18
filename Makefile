@@ -1,7 +1,7 @@
 .PHONY: clean-pyc clean-build install
 
 install:
-	python setup.py install --force
+	pip install -e .
 
 clean:
 	rm -rf build/
