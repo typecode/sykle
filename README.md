@@ -4,6 +4,7 @@ Sykle is a cli tool for calling commonly used commands in docker-compose project
 
 #### What sykle does
 
+
 - Enforces 3 docker-compose environments: `dev`, `test`, and `prod`
 - Provides commands for spinning up dev, running tests, and deploying to prod
   - (Assumes you are deploying to a single remote instance running docker-compose)
@@ -23,10 +24,11 @@ Sykle is a cli tool for calling commonly used commands in docker-compose project
 - `docker-compose` (locally and on deployment target)
 - `ssh`
 - `scp`
+- `python 3.7` (may work on earlier versions of 3, but only tested on 3.7. Plugins do NOT work in python version 2.7)
 
 ### Installation
 
-`pip install git+ssh://git@github.com/typecode/sykle.git`
+`pip install git+ssh://git@github.com/typecode/sykle.git --upgrade`
 
 ### Configuration
 
@@ -123,25 +125,29 @@ In addition to your `docker-compose` files, you'll need a `.sykle.json`. See bel
 
 ### Usage
 
-Usage instructions can be viewed after installation with `sykle --help`
+Usage instructions can be viewed after installation with `syk --help`
+
+This will not show any info for plugins. In order to view installed plugins, run `syk plugins`. To view help for a specfic plugin, run `syk <plugin_name> --help`.
 
 ```
 Sykle CLI
+NOTE:
+  Options must be declared BEFORE the command (this allows us to create plugins)
 
 Usage:
-  syk dc [--debug] [--config=<file>] [--test | --prod | --prod-build] [INPUT ...]
-  syk dc_run [--debug] [--config=<file>] [--service=<service>] [--test | --prod | --prod-build] [INPUT ...]
-  syk dc_exec [--debug] [--config=<file>] [--service=<service>] [INPUT ...]
-  syk build [--debug] [--config=<file>] [--test | --prod]
-  syk up [--debug] [--config=<file>] [--test | --prod]
-  syk down [--debug] [--config=<file>] [--test | --prod]
-  syk unittest [--service=<service>] [--debug] [--config=<file>] [INPUT ...]
-  syk e2e [--service=<service>] [--debug] [--config=<file>] [INPUT ...]
-  syk push [--debug] [--config=<file>]
-  syk ssh [--debug] [--config=<file>]
-  syk ssh_cp [--debug] [--config=<file>] [--dest=<dest>] [INPUT ...]
-  syk ssh_exec [--debug] [--config=<file>] [INPUT ...]
-  syk deploy [--debug] [--config=<file>] [--env=<env_file>] [--location=<location>]
+  syk [--debug] [--config=<file>] [--test | --prod | --prod-build] dc [INPUT ...]
+  syk [--debug] [--config=<file>] [--service=<service>] [--test | --prod | --prod-build] dc_run [INPUT ...]
+  syk [--debug] [--config=<file>] [--service=<service>] dc_exec [INPUT ...]
+  syk [--debug] [--config=<file>] [--test | --prod] build
+  syk [--debug] [--config=<file>] [--test | --prod] up
+  syk [--debug] [--config=<file>] [--test | --prod] down
+  syk [--service=<service>] [--debug] [--config=<file>] unittest [INPUT ...]
+  syk [--service=<service>] [--debug] [--config=<file>] e2e [INPUT ...]
+  syk [--debug] [--config=<file>] push
+  syk [--debug] [--config=<file>] ssh
+  syk [--debug] [--config=<file>] [--dest=<dest>] ssh_cp [INPUT ...]
+  syk [--debug] [--config=<file>] ssh_exec [INPUT ...]
+  syk [--debug] [--config=<file>] [--env=<env_file>] [--location=<location>] deploy
   syk init
   syk plugins
   syk [--debug] [--config=<file>] [INPUT ...]
@@ -183,7 +189,7 @@ Description:
   unittest            defines how to run unittests on services
   e2e                 defines how to run end-to-end tests on services
   docker_vars*        (optional) docker/docker-compose variables
-  plugins*            (option) hash containing plugin specific configuration
+  plugins*            (optional) hash containing plugin specific configuration
 
 ```
 
@@ -197,7 +203,15 @@ When you pull down the repo for the first time, you should run the following com
 git config core.hooksPath .githooks
 ```
 
-This will make it so that after commit, if there has been a change to the docstrings, an additional "Update README" commit will be created with up to date documentation
+This will make it so that after commit, if there has been a change to the docstrings, an additional "Update README" commit will be created with up to date documentation.
+
+#### Requirements
+
+You will need to install `chevron` for the githooks to work:
+
+```sh
+pip install chevron
+```
 
 #### Writing plugins
 
@@ -214,5 +228,10 @@ Any `README.mustache` defined in a plugin folder will have a usage variable prov
 - [x] Add plugins
 - [x] REAMDE.md generation on ~push to repo~ commit
 - [x] Add `init` command to create `.sykle.json`
+- [ ] Fallback to `./run.sh` if it exists and `.sykle.json` does not
+- [ ] Scripts section in `.sykle.json`
+- [ ] User aliases
+- [ ] Way to share aliases
 - [ ] Terraform support
 - [ ] Revisit whether `docker-compose` files can/should be shared
+- [ ] Opt-in/out to plugins

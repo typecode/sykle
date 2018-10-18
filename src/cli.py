@@ -1,21 +1,23 @@
 #!/usr/bin/python
 
 """Sykle CLI
+NOTE:
+  Options must be declared BEFORE the command (this allows us to create plugins)
 
 Usage:
-  syk dc [--debug] [--config=<file>] [--test | --prod | --prod-build] [INPUT ...]
-  syk dc_run [--debug] [--config=<file>] [--service=<service>] [--test | --prod | --prod-build] [INPUT ...]
-  syk dc_exec [--debug] [--config=<file>] [--service=<service>] [INPUT ...]
-  syk build [--debug] [--config=<file>] [--test | --prod]
-  syk up [--debug] [--config=<file>] [--test | --prod]
-  syk down [--debug] [--config=<file>] [--test | --prod]
-  syk unittest [--service=<service>] [--debug] [--config=<file>] [INPUT ...]
-  syk e2e [--service=<service>] [--debug] [--config=<file>] [INPUT ...]
-  syk push [--debug] [--config=<file>]
-  syk ssh [--debug] [--config=<file>]
-  syk ssh_cp [--debug] [--config=<file>] [--dest=<dest>] [INPUT ...]
-  syk ssh_exec [--debug] [--config=<file>] [INPUT ...]
-  syk deploy [--debug] [--config=<file>] [--env=<env_file>] [--location=<location>]
+  syk [--debug] [--config=<file>] [--test | --prod | --prod-build] dc [INPUT ...]
+  syk [--debug] [--config=<file>] [--service=<service>] [--test | --prod | --prod-build] dc_run [INPUT ...]
+  syk [--debug] [--config=<file>] [--service=<service>] dc_exec [INPUT ...]
+  syk [--debug] [--config=<file>] [--test | --prod] build
+  syk [--debug] [--config=<file>] [--test | --prod] up
+  syk [--debug] [--config=<file>] [--test | --prod] down
+  syk [--service=<service>] [--debug] [--config=<file>] unittest [INPUT ...]
+  syk [--service=<service>] [--debug] [--config=<file>] e2e [INPUT ...]
+  syk [--debug] [--config=<file>] push
+  syk [--debug] [--config=<file>] ssh
+  syk [--debug] [--config=<file>] [--dest=<dest>] ssh_cp [INPUT ...]
+  syk [--debug] [--config=<file>] ssh_exec [INPUT ...]
+  syk [--debug] [--config=<file>] [--env=<env_file>] [--location=<location>] deploy
   syk init
   syk plugins
   syk [--debug] [--config=<file>] [INPUT ...]
@@ -57,7 +59,7 @@ Description:
   unittest            defines how to run unittests on services
   e2e                 defines how to run end-to-end tests on services
   docker_vars*        (optional) docker/docker-compose variables
-  plugins*            (option) hash containing plugin specific configuration
+  plugins*            (optional) hash containing plugin specific configuration
 """
 from .sykle import Sykle
 from .plugins import Plugins
