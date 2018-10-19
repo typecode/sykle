@@ -4,6 +4,7 @@ from .config import Config
 import os.path
 import json
 import collections
+import dotenv
 
 
 class Sykle():
@@ -82,13 +83,22 @@ class Sykle():
             docker_vars=_docker_vars,
         ).call(input)
 
-    def dc_run(self, input, service=None, docker_type='dev'):
+    def dc_run(self, input, service=None, docker_type='dev', env_file=None):
         """
         Spins up and runs a command on a container representing a
         docker compose service
         """
+        opts = []
+        if env_file:
+            # NB: as of this comment, docker-compose does not have an
+            #     --env-file option. If it did, we would use it here.
+            #     See: https://github.com/docker/compose/issues/6170
+            env = dotenv.dotenv_values(env_file)
+            env_opts = [["-e", "{}={}".format(k, v)] for k, v in env.items()]
+            opts = opts + [a for b in env_opts for a in b]
+        opts += ['--rm']
         self.dc(
-            input=['run', '--rm', service or self.default_service] + input,
+            input=['run'] + opts + [service or self.default_service] + input,
             docker_type=docker_type,
         )
 
@@ -168,11 +178,13 @@ class Sykle():
         """Opens an ssh connection to the deployment"""
         call_subprocess(['ssh', target], debug=self.debug)
 
-    def predeploy(self):
+    def predeploy(self, env_file=None):
         for config in self.predeploy_config:
             self.dc_run(
                 input=config['command'].split(' '),
-                service=config['service'], docker_type='prod-build'
+                service=config['service'],
+                docker_type='prod-build',
+                env_file=env_file
             )
 
     def deploy(self, target, env_file=None):
@@ -181,9 +193,9 @@ class Sykle():
         Parameters:
             env_file (str): name of env file to copy to production
         """
-        self.predeploy()
+        self.predeploy(env_file=env_file)
         self.push()
-        self.deployment_cp([env_file or '.env'], target=target, dest='~/.env')
+        self.deployment_cp([env_file], target=target, dest='~/.env')
         self.deployment_cp(['docker-compose.prod.yml'], target=target)
         self.deployment_exec(
             ['docker', 'system', 'prune', '-a', '--force'], target=target

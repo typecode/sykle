@@ -6,7 +6,7 @@ NOTE:
 
 Usage:
   syk [--debug] [--config=<file>] [--test | --prod | --prod-build] dc [INPUT ...]
-  syk [--debug] [--config=<file>] [--service=<service>] [--test | --prod | --prod-build] dc_run [INPUT ...]
+  syk [--debug] [--config=<file>] [--service=<service>] [--test | --prod | --prod-build] [--env=<env_file>] dc_run [INPUT ...]
   syk [--debug] [--config=<file>] [--service=<service>] dc_exec [INPUT ...]
   syk [--debug] [--config=<file>] [--test | --prod] build
   syk [--debug] [--config=<file>] [--test | --prod] up
