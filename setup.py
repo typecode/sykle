@@ -17,8 +17,7 @@ setup(
     packages=['src', 'plugins.sync_pg_data'],
     install_requires=[
         'docopt>=0.6.2,<0.7',
-        'python-dotenv>=0.9.1,<0.10',
-        'boto3>=1.7.57,<1.8',
+        'python-dotenv>=0.9.1,<0.10'
     ],
     entry_points={
         'console_scripts': [

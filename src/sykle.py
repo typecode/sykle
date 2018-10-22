@@ -1,9 +1,6 @@
 from .dc_runner import DCRunner
 from .call_subprocess import call_subprocess
-from .config import Config
-import os.path
-import json
-import collections
+import dotenv
 
 
 class Sykle():
@@ -14,7 +11,7 @@ class Sykle():
         self, project_name='sykle-project',
         unittest_config=[], e2e_config=[],
         predeploy_config=[], debug=False,
-        docker_vars={}, aliases={}
+        aliases={}
     ):
         """
         Parameters:
@@ -24,38 +21,13 @@ class Sykle():
             e2e_config (array[dict]): Array of end to end test configs
             predeploy_config (array[dict]): Array with predeploy steps
             aliases (dict): Dictionary defining custom commands
-            docker_vars (str): Vars used in docker-compose/docker files
         """
         self.aliases = aliases
         self.debug = debug
         self.project_name = project_name
-        self.docker_vars = docker_vars
         self.e2e_config = e2e_config
         self.predeploy_config = predeploy_config
         self.unittest_config = unittest_config
-
-    @staticmethod
-    def init():
-        if os.path.isfile(Config.FILENAME):
-            print('"{}" already exsits'.format(Config.FILENAME))
-        else:
-            with open(Config.FILENAME, 'w+') as file:
-                json.dump(collections.OrderedDict([
-                    ("version", 1),
-                    ("project_name", None),
-                    ("default_deployment", "staging"),
-                    ("default_service", None),
-                    ("unittest", [{"service": None, "command": None}]),
-                    ("e2e", [{"service": None, "command": None}]),
-                    ("aliases", {}),
-                    ("predeploy", []),
-                    ("deployments", {"staging": {"env_file": None, "target": None}}),
-                    ("plugins", {})
-                ]), file, indent=2)
-
-    @property
-    def docker_vars_command(self):
-        return ["{}={}".format(k, v) for k, v in self.docker_vars.items()]
 
     def _run_tests(self, configs, warning=None, input=[], service=None):
         if not configs and warning:
@@ -70,26 +42,49 @@ class Sykle():
             self.dc_run(command, service=config['service'], docker_type='test')
         self.down(docker_type='test')
 
+    def _add_latest_build_tag(self, docker_vars):
+        # TODO: This assumes the docker compose file has
+        #       a BUILD_NUMBER env var used to tag images.
+        #       There should be a better way to tag builds that
+        #       doesn't make that assumption
+        _docker_vars = docker_vars.copy()
+        _docker_vars['BUILD_NUMBER'] = 'latest'
+        return _docker_vars
+
+    def _remote_docker_compose_command(self, docker_vars):
+        """Supplies env args and defines beginning of remote command"""
+        _docker_vars = self._add_latest_build_tag(docker_vars)
+        return ["{}={}".format(k, v) for k, v in _docker_vars.items()] + [
+            'docker-compose', '-f', 'docker-compose.prod.yml'
+        ]
+
     def dc(self, input, docker_type='dev', docker_vars={}):
         """Runs a command with the correct docker compose file(s)"""
-        _docker_vars = self.docker_vars.copy()
-        _docker_vars.update(docker_vars)
-
         DCRunner(
             type=docker_type,
             project_name=self.project_name,
             debug=self.debug,
-            docker_vars=_docker_vars,
+            docker_vars=docker_vars,
         ).call(input)
 
-    def dc_run(self, input, service=None, docker_type='dev'):
+    def dc_run(self, input, service=None, docker_type='dev', env_file=None, docker_vars={}):
         """
         Spins up and runs a command on a container representing a
         docker compose service
         """
+        opts = []
+        if env_file:
+            # NB: as of this comment, docker-compose does not have an
+            #     --env-file option. If it did, we would use it here.
+            #     See: https://github.com/docker/compose/issues/6170
+            env = dotenv.dotenv_values(env_file)
+            env_opts = [["-e", "{}={}".format(k, v)] for k, v in env.items()]
+            opts = opts + [a for b in env_opts for a in b]
+        opts += ['--rm']
         self.dc(
-            input=['run', '--rm', service or self.default_service] + input,
+            input=['run'] + opts + [service or self.default_service] + input,
             docker_type=docker_type,
+            docker_vars=docker_vars
         )
 
     def dc_exec(self, input, service=None, docker_type='dev'):
@@ -100,17 +95,18 @@ class Sykle():
             docker_type=docker_type,
         )
 
-    def build(self, docker_type='dev'):
+    def build(self, docker_type='dev', docker_vars={}):
         """Builds docker images based on compose files"""
         if docker_type == 'prod':
             self.dc(
                 input=['build'],
-                docker_type='prod-build'
+                docker_type='prod-build',
+                docker_vars=docker_vars,
             )
             self.dc(
                 input=['build'],
                 docker_type='prod-build',
-                docker_vars={'BUILD_NUMBER': 'latest'}
+                docker_vars=self._add_latest_build_tag(docker_vars)
             )
         else:
             self.dc(
@@ -146,10 +142,14 @@ class Sykle():
             input=input, service=None
         )
 
-    def push(self):
+    def push(self, docker_vars={}):
         """Pushes docker images"""
-        self.dc(['push'], docker_type='prod-build')
-        self.dc(['push'], docker_type='prod-build', docker_vars={'BUILD_NUMBER': 'latest'})
+        self.dc(['push'], docker_type='prod-build', docker_vars=docker_vars)
+        self.dc(
+            ['push'],
+            docker_type='prod-build',
+            docker_vars=self._add_latest_build_tag(docker_vars)
+        )
 
     def deployment_cp(self, input, target, dest='~'):
         """Copies a file to the deployment"""
@@ -168,34 +168,30 @@ class Sykle():
         """Opens an ssh connection to the deployment"""
         call_subprocess(['ssh', target], debug=self.debug)
 
-    def predeploy(self):
+    def predeploy(self, env_file=None, docker_vars={}):
         for config in self.predeploy_config:
             self.dc_run(
                 input=config['command'].split(' '),
-                service=config['service'], docker_type='prod-build'
+                service=config['service'],
+                docker_type='prod-build',
+                env_file=env_file,
+                docker_vars=docker_vars
             )
 
-    def deploy(self, target, env_file=None):
-        """Deploys docker images/static assets and starts services
-
-        Parameters:
-            env_file (str): name of env file to copy to production
-        """
-        self.predeploy()
-        self.push()
-        self.deployment_cp([env_file or '.env'], target=target, dest='~/.env')
+    def deploy(self, target, env_file=None, docker_vars={}):
+        """Deploys docker images/static assets and starts services"""
+        self.predeploy(env_file=env_file, docker_vars=docker_vars)
+        self.push(docker_vars=docker_vars)
+        self.deployment_cp([env_file], target=target, dest='~/.env')
         self.deployment_cp(['docker-compose.prod.yml'], target=target)
+        # TODO: might want to make this optional
         self.deployment_exec(
             ['docker', 'system', 'prune', '-a', '--force'], target=target
         )
 
-        remote_docker_command = self.docker_vars_command + [
-            'BUILD_NUMBER=latest', 'docker-compose',
-            '-f', 'docker-compose.prod.yml'
-        ]
-
-        self.deployment_exec(remote_docker_command + ['pull'], target=target)
-        self.deployment_exec(remote_docker_command + ['up', '-d'], target=target)
+        command = self._remote_docker_compose_command(docker_vars)
+        self.deployment_exec(command + ['pull'], target=target)
+        self.deployment_exec(command + ['up', '-d'], target=target)
 
     def run_alias(self, alias, input=[], docker_type=None):
         alias_config = self.aliases.get(alias)
