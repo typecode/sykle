@@ -20,11 +20,11 @@ Sykle is a cli tool for calling commonly used commands in docker-compose project
 
 ### Requirements
 
+- `python 3.7` (may work on earlier versions of 3, but only tested on 3.7. Plugins do NOT work in python version 2.7)
 - `docker` (locally and on deployment target)
 - `docker-compose` (locally and on deployment target)
 - `ssh`
 - `scp`
-- `python 3.7` (may work on earlier versions of 3, but only tested on 3.7. Plugins do NOT work in python version 2.7)
 
 ### Installation
 
@@ -47,7 +47,7 @@ These separate configurations allow you to tweak how your projects run in those 
 
 #### .sykle.json
 
-In addition to your `docker-compose` files, you'll need a `.sykle.json`. See below for a sample.
+In addition to your `docker-compose` files, you'll need a `.sykle.json`. An example is listed below. This example can be viewed from the cli via `syk --help config`
 
 *Example:*
 ```json

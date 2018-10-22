@@ -1,28 +1,26 @@
 #!/usr/bin/python
 
 """Sykle CLI
-NOTE:
-  Options must be declared BEFORE the command (this allows us to create plugins)
-
 Usage:
   syk [--debug] [--config=<file>] [--test | --prod | --prod-build] dc [INPUT ...]
-  syk [--debug] [--config=<file>] [--service=<service>] [--test | --prod | --prod-build] [--env=<env_file>] dc_run [INPUT ...]
-  syk [--debug] [--config=<file>] [--service=<service>] dc_exec [INPUT ...]
-  syk [--debug] [--config=<file>] [--test | --prod] build
+  syk [--debug] [--config=<file>] [--test | --prod | --prod-build] [--service=<service>] [--env=<env_file>] dc_run [INPUT ...]
+  syk [--debug] [--config=<file>] [--test | --prod] [--service=<service>] dc_exec [INPUT ...]
+  syk [--debug] [--config=<file>] [--test | --prod] [--deployment=<name>] build
   syk [--debug] [--config=<file>] [--test | --prod] up
   syk [--debug] [--config=<file>] [--test | --prod] down
-  syk [--service=<service>] [--debug] [--config=<file>] unittest [INPUT ...]
-  syk [--service=<service>] [--debug] [--config=<file>] e2e [INPUT ...]
-  syk [--debug] [--config=<file>] push
-  syk [--debug] [--config=<file>] ssh
-  syk [--debug] [--config=<file>] [--dest=<dest>] ssh_cp [INPUT ...]
-  syk [--debug] [--config=<file>] ssh_exec [INPUT ...]
-  syk [--debug] [--config=<file>] [--env=<env_file>] [--location=<location>] deploy
+  syk [--debug] [--config=<file>] [--service=<service>] unittest [INPUT ...]
+  syk [--debug] [--config=<file>] [--service=<service>] e2e [INPUT ...]
+  syk [--debug] [--config=<file>] [--deployment=<name>] push
+  syk [--debug] [--config=<file>] [--deployment=<name>] ssh
+  syk [--debug] [--config=<file>] [--deployment=<name>] [--dest=<dest>] ssh_cp [INPUT ...]
+  syk [--debug] [--config=<file>] [--deployment=<name>] ssh_exec [INPUT ...]
+  syk [--debug] [--config=<file>] [--env=<env_file>] [--deployment=<name>] deploy
   syk init
   syk plugins
+  syk config
   syk [--debug] [--config=<file>] [INPUT ...]
 
-Options:
+Option
   -h --help               Show help info
   --version               Show version
   --test                  Run command with test compose file
@@ -33,7 +31,7 @@ Options:
   --env=<env_file>        Env file to use [default: .env]
   --service=<service>     Docker service on which to run the command
   --debug                 Prints debug information
-  --location=<location>   Location to deploy to
+  --deployment=<name>     Uses config for the given deployment
 
 Description:
   dc              Runs docker-compose command
@@ -51,101 +49,154 @@ Description:
   deploy          Deploys and starts latest builds on ssh target
   init            Creates a blank config file
   plugins         Lists available plugins
-
-.sykle.json:
-  project_name        name of the project (used for naming docker images)
-  default_service     default service to use when invoking dc_run
-  deployment_target   ssh target address for deployment
-  unittest            defines how to run unittests on services
-  e2e                 defines how to run end-to-end tests on services
-  docker_vars*        (optional) docker/docker-compose variables
-  plugins*            (optional) hash containing plugin specific configuration
+  config          Print an example config
 """
 from .sykle import Sykle
 from .plugins import Plugins
 from .config import Config
 from . import __version__
 from docopt import docopt
+import os
+
+SYKLE_EXAMPLE_PATH = os.path.join(
+    os.path.dirname(__file__),
+    '.sykle.example.json'
+)
+
+
+def _load_config(args):
+    config_name = args['--config'] or Config.FILENAME
+    try:
+        return Config.from_file(config_name)
+    except Config.ConfigFileNotFoundError:
+        print(
+            '\033[91m' +
+            "Config file '{}' does not exist!\n".format(config_name) +
+            "You can create an empty config by running: \n" +
+            "    syk init" +
+            '\033[0m'
+        )
+        return
+    except Config.ConfigFileDecodeError as e:
+        print(
+            '\033[91m' +
+            'Config Decode Error: {}'.format(e) +
+            '\033[0m'
+        )
+        return
+
+
+def _get_docker_type(args):
+    if args['--test']:
+        return 'test'
+    elif args['--prod-build']:
+        return 'prod-build'
+    elif args['--prod']:
+        return 'prod'
+    return 'dev'
+
+
+def _load_docker_vars_for_deployment(config, deployment):
+    return Config.interpolate_env_values(
+        config.for_deployment(deployment).get('docker_vars', {}),
+        os.environ
+    )
 
 
 def main():
     args = docopt(__doc__, version=__version__, options_first=True)
 
+    # --- Run commands that do not require sykle instance ---
+
     if args['init']:
-        Sykle.init()
+        Config.init(enable_print=True)
+        return
+    elif args['config']:
+        print(Config.CONFIG_FILE_EXAMPLE)
         return
 
-    config = Config.from_file(args['--config'] or Config.FILENAME)
-    input = args['INPUT']
-    aliases = config.aliases
-    service = args['--service'] or config.default_service
-    plugins = Plugins(config=config)
-    location = args['--location'] or config.default_deployment
+    # --- Load config and docker type ---
 
-    docker_type = 'dev'
-    if args['--test']:
-        docker_type = 'test'
-    elif args['--prod-build']:
-        docker_type = 'prod-build'
-    elif args['--prod']:
-        docker_type = 'prod'
+    docker_type = _get_docker_type(args)
+    config = _load_config(args)
+    if not config:
+        return
+
+    # --- Set up argument defaults based on config ---
+
+    service = args['--service'] or config.default_service
+    deployment = args['--deployment'] or config.default_deployment
+
+    # --- Create sykle instance ---
 
     sykle = Sykle(
         project_name=config.project_name,
         unittest_config=config.unittest,
         e2e_config=config.e2e,
         predeploy_config=config.predeploy,
-        docker_vars=config.docker_vars,
         aliases=config.aliases,
         debug=args['--debug']
     )
 
+    # --- Run commands that require sykle instance ---
+
     if args['dc']:
-        sykle.dc(input=input, docker_type=docker_type)
+        sykle.dc(input=args['INPUT'], docker_type=docker_type)
     elif args['dc_run']:
-        sykle.dc_run(input=input, docker_type=docker_type, service=service)
+        sykle.dc_run(input=args['INPUT'], docker_type=docker_type, service=service)
     elif args['dc_exec']:
-        sykle.dc_exec(input=input, docker_type=docker_type, service=service)
+        sykle.dc_exec(input=args['INPUT'], docker_type=docker_type, service=service)
     elif args['build']:
-        sykle.build(docker_type=docker_type)
+        docker_vars = {}
+        if docker_type == 'prod':
+            docker_vars = _load_docker_vars_for_deployment(config, deployment)
+        elif args['--deployment']:
+            print(
+                '\033[93m' +
+                'No --prod flag found, ignoring --deployment option' +
+                '\033[0m'
+                .format(Config.FILENAME)
+            )
+        sykle.build(docker_type=docker_type, docker_vars=docker_vars)
     elif args['up']:
         sykle.up(docker_type=docker_type)
     elif args['down']:
         sykle.down(docker_type=docker_type)
     elif args['unittest']:
-        sykle.unittest(input=input, service=service)
+        sykle.unittest(input=args['INPUT'], service=service)
     elif args['e2e']:
-        sykle.e2e(input=input, service=service)
+        sykle.e2e(input=args['INPUT'], service=service)
     elif args['push']:
-        sykle.push()
+        docker_vars = _load_docker_vars_for_deployment(config, deployment)
+        sykle.push(docker_vars=docker_vars)
     elif args['ssh_cp']:
-        # NB: we're not calling ".for_deployment" at the top of this file
-        #     because we only want to get/validate deployment configs when
-        #     we're using them
-        deployment_config = config.for_deployment(location)
+        deployment_config = config.for_deployment(deployment)
         sykle.deployment_cp(
-            input=input, dest=args['--dest'],
+            input=args['INPUT'], dest=args['--dest'],
             target=deployment_config['target']
         )
     elif args['ssh_exec']:
-        deployment_config = config.for_deployment(location)
-        sykle.deployment_exec(input=input, target=deployment_config['target'])
+        deployment_config = config.for_deployment(deployment)
+        sykle.deployment_exec(input=args['INPUT'], target=deployment_config['target'])
     elif args['ssh']:
-        deployment_config = config.for_deployment(location)
+        deployment_config = config.for_deployment(deployment)
         sykle.deployment_ssh(target=deployment_config['target'])
     elif args['deploy']:
-        deployment_config = config.for_deployment(location)
+        deployment_config = config.for_deployment(deployment)
+        docker_vars = deployment_config.get('docker_vars', {})
         env_file = deployment_config.get('env_file', args['--env'])
         target = deployment_config['target']
-        sykle.deploy(target=target, env_file=env_file)
+        sykle.deploy(target=target, env_file=env_file, docker_vars=docker_vars)
     elif args['plugins']:
         print('Installed syk plugins:')
+        plugins = Plugins(config=config)
         for plugin in plugins.list():
             print('  {}'.format(plugin))
     else:
-        cmd = input[0] if len(input) > 0 else None
-        input = input[1:] if len(input) > 1 else []
-        if aliases.get(cmd):
+        cmd = input[0] if len(args['INPUT']) > 0 else None
+        input = input[1:] if len(args['INPUT']) > 1 else []
+        plugins = Plugins(config=config)
+        if config.aliases.get(cmd):
             sykle.run_alias(alias=cmd, input=input)
         elif plugins.exists(cmd):
             plugins.run(cmd)

@@ -8,7 +8,7 @@ TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'README.mustache')
 README_PATH = os.path.join(os.path.dirname(__file__), 'README.md')
 SYKLE_EXAMPLE_PATH = os.path.join(
     os.path.dirname(__file__),
-    '.sykle.example.json'
+    'src/.sykle.example.json'
 )
 
 sykle_example = None
