@@ -1,19 +1,12 @@
 from src.cli import __doc__
 from src.plugins import Plugins
+from src.config import Config
 import os
 import chevron
 
 PLUGINS_PATH = os.path.join(os.path.dirname(__file__), 'plugins')
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'README.mustache')
 README_PATH = os.path.join(os.path.dirname(__file__), 'README.md')
-SYKLE_EXAMPLE_PATH = os.path.join(
-    os.path.dirname(__file__),
-    'src/.sykle.example.json'
-)
-
-sykle_example = None
-with open(SYKLE_EXAMPLE_PATH, 'r', encoding='utf-8') as f:
-    sykle_example = f.read()
 
 
 def create_readme(template, destination, docstring):
@@ -24,7 +17,7 @@ def create_readme(template, destination, docstring):
     with open(template, 'r', encoding='utf-8') as f:
         long_description = chevron.render(f.read(), {
             'usage': docstring,
-            'sykle_example': sykle_example,
+            'config_example': Config.CONFIG_FILE_EXAMPLE,
         })
 
     if os.path.isfile(destination):

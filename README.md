@@ -20,11 +20,11 @@ Sykle is a cli tool for calling commonly used commands in docker-compose project
 
 ### Requirements
 
+- `python 3.7` (may work on earlier versions of 3, but only tested on 3.7. Plugins do NOT work in python version 2.7)
 - `docker` (locally and on deployment target)
 - `docker-compose` (locally and on deployment target)
 - `ssh`
 - `scp`
-- `python 3.7` (may work on earlier versions of 3, but only tested on 3.7. Plugins do NOT work in python version 2.7)
 
 ### Installation
 
@@ -47,18 +47,24 @@ These separate configurations allow you to tweak how your projects run in those 
 
 #### .sykle.json
 
-In addition to your `docker-compose` files, you'll need a `.sykle.json`. See below for a sample.
+In addition to your `docker-compose` files, you'll need a `.sykle.json`. An example is listed below. This example can be viewed from the cli via `syk config`
 
 *Example:*
 ```json
+
 {
-    "version": 1,
+    // specifies which version of .sykle.json is being used
+    "version": 2,
+    // name of the project (used when naming docker images)
     "project_name": "cool-project",
+    // docker compose service to use for commands by default (EX: for syk dc_run)
     "default_service": "django",
-    "default_deployment": "staging",
+    // list of commands needed to run unittests (run sequentially)
     "unittest": [
         {
+            // docker compose service on which to run the command
             "service": "django",
+            // command invoked via 'docker-compose run --rm <service>'
             "command": "django-admin test"
         },
         {
@@ -66,36 +72,70 @@ In addition to your `docker-compose` files, you'll need a `.sykle.json`. See bel
             "command": "npm test"
         }
     ],
+    // list of commands needed to run e2e tests (run sequentially)
     "e2e": [
         {
             "service": "django",
             "command": "behave"
         }
     ],
+    // list of commands to invoke before deploying (run sequentially)
     "predeploy": [
         {
             "service": "django",
             "command": "django-admin collectstatic --no-input"
         }
     ],
+    // deployment to use by default (must be listed in deployments section)
+    "default_deployment": "staging",
+    // a collection of locations where you can deploy the project to.
+    // each remote instance is assumed to:
+    //   - be accessible via ssh
+    //   - have docker installed
+    //   - have docker-compose installed
+    // the machine you are deploying from is assumed to:
+    //   - have ssh access to the remote machine
+    //   - have the 'ssh' command
+    //   - have the 'scp' command
+    //   - have docker installed
+    //   - have docker-compose installed
     "deployments": {
+        // the location of the deployment (EX: 'syk --location=prod deploy')
         "prod": {
+            // the ssh address of the machine the deployment should point to
             "target": "ec2-user@www.my-site.com",
-            "env_file": ".env.prod",
+            // environment to use when the deployment is running
+            "env": ".env.prod",
+            // docker_vars are variables that are made available to the
+            // prod-build and prod docker compose files
+            "docker_vars": {
+              "SERVICE_IMAGE": "some-ecr-url/prod-repo",
+              // if a variable begins with a $ sign, it will pull the value
+              // from that environment value
+              "BUILD_NUMBER": "$BUILD_NUMBER"
+            }
         },
+        // multiple deployments can be listed
         "staging": {
             "target": "ect-user@staging.my-site.com",
-            "env_file": ".env.staging",
+            "env": ".env.staging",
+            "docker_vars": {
+              "SERVICE_IMAGE": "some-ecr-url/staging-url",
+              "BUILD_NUMBER": "$BUILD_NUMBER"
+            }
         }
     },
+    // defines shortcuts for commonly used commands
     "aliases": {
+        // name of the command (would type 'syk dj <INPUT>' to use)
         "dj": {
             "service": "django",
             "command": "django-admin"
         }
     },
-    "docker_vars": {},
+    // defines settings specific to plugins
     "plugins": {
+      // name of the plugin the settings apply to
       "sync_pg_data": {
         "staging": {
           "env_file": ".env.staging",
@@ -131,28 +171,26 @@ This will not show any info for plugins. In order to view installed plugins, run
 
 ```
 Sykle CLI
-NOTE:
-  Options must be declared BEFORE the command (this allows us to create plugins)
-
 Usage:
   syk [--debug] [--config=<file>] [--test | --prod | --prod-build] dc [INPUT ...]
-  syk [--debug] [--config=<file>] [--service=<service>] [--test | --prod | --prod-build] [--env=<env_file>] dc_run [INPUT ...]
-  syk [--debug] [--config=<file>] [--service=<service>] dc_exec [INPUT ...]
-  syk [--debug] [--config=<file>] [--test | --prod] build
+  syk [--debug] [--config=<file>] [--test | --prod | --prod-build] [--service=<service>] [--env=<env_file>] dc_run [INPUT ...]
+  syk [--debug] [--config=<file>] [--test | --prod] [--service=<service>] dc_exec [INPUT ...]
+  syk [--debug] [--config=<file>] [--test | --prod] [--deployment=<name>] build
   syk [--debug] [--config=<file>] [--test | --prod] up
   syk [--debug] [--config=<file>] [--test | --prod] down
-  syk [--service=<service>] [--debug] [--config=<file>] unittest [INPUT ...]
-  syk [--service=<service>] [--debug] [--config=<file>] e2e [INPUT ...]
-  syk [--debug] [--config=<file>] push
-  syk [--debug] [--config=<file>] ssh
-  syk [--debug] [--config=<file>] [--dest=<dest>] ssh_cp [INPUT ...]
-  syk [--debug] [--config=<file>] ssh_exec [INPUT ...]
-  syk [--debug] [--config=<file>] [--env=<env_file>] [--location=<location>] deploy
+  syk [--debug] [--config=<file>] [--service=<service>] unittest [INPUT ...]
+  syk [--debug] [--config=<file>] [--service=<service>] e2e [INPUT ...]
+  syk [--debug] [--config=<file>] [--deployment=<name>] push
+  syk [--debug] [--config=<file>] [--deployment=<name>] ssh
+  syk [--debug] [--config=<file>] [--deployment=<name>] [--dest=<dest>] ssh_cp [INPUT ...]
+  syk [--debug] [--config=<file>] [--deployment=<name>] ssh_exec [INPUT ...]
+  syk [--debug] [--config=<file>] [--env=<env_file>] [--deployment=<name>] deploy
   syk init
   syk plugins
+  syk config
   syk [--debug] [--config=<file>] [INPUT ...]
 
-Options:
+Option
   -h --help               Show help info
   --version               Show version
   --test                  Run command with test compose file
@@ -163,7 +201,7 @@ Options:
   --env=<env_file>        Env file to use [default: .env]
   --service=<service>     Docker service on which to run the command
   --debug                 Prints debug information
-  --location=<location>   Location to deploy to
+  --deployment=<name>     Uses config for the given deployment
 
 Description:
   dc              Runs docker-compose command
@@ -181,15 +219,7 @@ Description:
   deploy          Deploys and starts latest builds on ssh target
   init            Creates a blank config file
   plugins         Lists available plugins
-
-.sykle.json:
-  project_name        name of the project (used for naming docker images)
-  default_service     default service to use when invoking dc_run
-  deployment_target   ssh target address for deployment
-  unittest            defines how to run unittests on services
-  e2e                 defines how to run end-to-end tests on services
-  docker_vars*        (optional) docker/docker-compose variables
-  plugins*            (optional) hash containing plugin specific configuration
+  config          Print an example config
 
 ```
 

@@ -58,7 +58,7 @@ from . import __version__
 from docopt import docopt
 import os
 
-SYKLE_EXAMPLE_PATH = os.path.join(
+config_example_PATH = os.path.join(
     os.path.dirname(__file__),
     '.sykle.example.json'
 )
