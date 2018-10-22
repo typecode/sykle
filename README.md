@@ -50,7 +50,7 @@ These separate configurations allow you to tweak how your projects run in those 
 In addition to your `docker-compose` files, you'll need a `.sykle.json`. An example is listed below. This example can be viewed from the cli via `syk config`
 
 *Example:*
-```json
+```js
 
 {
     // specifies which version of .sykle.json is being used
