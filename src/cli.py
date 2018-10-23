@@ -193,8 +193,9 @@ def main():
         for plugin in plugins.list():
             print('  {}'.format(plugin))
     else:
-        cmd = input[0] if len(args['INPUT']) > 0 else None
-        input = input[1:] if len(args['INPUT']) > 1 else []
+        input = args['INPUT']
+        cmd = input[0] if len(input) > 0 else None
+        input = input[1:] if len(input) > 1 else []
         plugins = Plugins(config=config)
         if config.aliases.get(cmd):
             sykle.run_alias(alias=cmd, input=input)
