@@ -1,10 +1,10 @@
-from src.cli import __doc__
-from src.plugins import Plugins
-from src.config import Config
+from sykle.cli import __doc__
+from sykle.plugin_utils import Plugins
+from sykle.config import Config
 import os
 import chevron
 
-PLUGINS_PATH = os.path.join(os.path.dirname(__file__), 'plugins')
+PLUGINS_PATH = os.path.join(os.path.dirname(__file__), 'sykle.plugins')
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'README.mustache')
 README_PATH = os.path.join(os.path.dirname(__file__), 'README.md')
 

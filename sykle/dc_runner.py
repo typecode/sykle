@@ -9,12 +9,14 @@ class DCRunner():
     def __init__(
         self,
         type='dev', project_name='tc-project',
-        debug=False, docker_vars={}
+        debug=False, docker_vars={},
+        target=None
     ):
         self.type = type
         self.project_name = project_name
         self.debug = debug
         self.docker_vars = docker_vars
+        self.target = target
 
     @property
     def docker_compose_file(self):
@@ -45,7 +47,8 @@ class DCRunner():
             call_subprocess(
                 base_command + input,
                 debug=self.debug,
-                env=self.docker_vars
+                env=self.docker_vars,
+                target=self.target
             )
         except KeyboardInterrupt:
             print('Exiting...')

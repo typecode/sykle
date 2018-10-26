@@ -51,10 +51,9 @@ Description:
   plugins         Lists available plugins
   config          Print an example config
 """
-from .sykle import Sykle
-from .plugins import Plugins
+from .plugin_utils import Plugins
 from .config import Config
-from . import __version__
+from . import Sykle, __version__
 from docopt import docopt
 import os
 
@@ -103,6 +102,11 @@ def main():
 
     if args['init']:
         Config.init(enable_print=True)
+        return
+    elif args['plugins']:
+        print('Installed syk plugins:')
+        for plugin in Plugins.list():
+            print('  {}'.format(plugin))
         return
     elif args['config']:
         print(Config.CONFIG_FILE_EXAMPLE)
@@ -180,16 +184,11 @@ def main():
         env_file = deployment_config.get('env_file', args['--env'])
         target = deployment_config['target']
         sykle.deploy(target=target, env_file=env_file, docker_vars=docker_vars)
-    elif args['plugins']:
-        print('Installed syk plugins:')
-        plugins = Plugins(config=config)
-        for plugin in plugins.list():
-            print('  {}'.format(plugin))
     else:
         input = args['INPUT']
         cmd = input[0] if len(input) > 0 else None
         input = input[1:] if len(input) > 1 else []
-        plugins = Plugins(config=config)
+        plugins = Plugins(config=config, sykle=sykle)
         if config.aliases.get(cmd):
             sykle.run_alias(alias=cmd, input=input)
         elif plugins.exists(cmd):

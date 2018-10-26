@@ -8,15 +8,17 @@ node {
 
   ps.checkout()
   test()
-  deploy()
-  ps.notifySuccess()
+  if (env.BRANCH_NAME == 'master') {
+    deploy()
+    ps.notifySuccess()
+  }
 }
 
 def test() {
   stage('Test') {
-    // sh '''
-    //   python -m unittest discover test "*test.py"
-    // '''
+    sh '''
+      python3 setup.py test
+    '''
   }
 }
 

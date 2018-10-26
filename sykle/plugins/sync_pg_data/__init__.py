@@ -40,9 +40,9 @@ Example .sykle.json:
 
 __version__ = '0.0.3'
 
-from src.call_subprocess import call_subprocess
-from src.plugins import IPlugin
-from src.config import Config
+from sykle.call_subprocess import call_subprocess
+from sykle.plugin_utils import IPlugin
+from sykle.config import Config
 from docopt import docopt
 from datetime import datetime
 import os
@@ -50,7 +50,7 @@ import os
 
 class Plugin(IPlugin):
     REQUIRED_ARGS = ['USER', 'HOST', 'NAME', 'PASSWORD']
-    name = 'sync_pg_data'
+    NAME = 'sync_pg_data'
     dump_dir = 'backups'
 
     def get_dump_file_name(self, location):
