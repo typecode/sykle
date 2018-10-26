@@ -12,13 +12,15 @@ node {
   ps.notifySuccess()
 }
 
-def deploy() {
+def test() {
   stage('Test') {
     sh '''
       python -m unittest discover test "*test.py"
     '''
   }
+}
 
+def deploy() {
   stage('Deploy') {
     sh '''
       sudo make install
