@@ -29,6 +29,9 @@ class Sykle():
         self.predeploy_config = predeploy_config
         self.unittest_config = unittest_config
 
+    def _read_env_file(self, env_file):
+        return dotenv.dotenv_values(env_file)
+
     def _run_tests(self, configs, warning=None, input=[], service=None):
         if not configs and warning:
             print(warning)
@@ -67,7 +70,7 @@ class Sykle():
             docker_vars=docker_vars,
         ).call(input)
 
-    def dc_run(self, input, service=None, docker_type='dev', env_file=None, docker_vars={}):
+    def dc_run(self, input, service, docker_type='dev', env_file=None, docker_vars={}):
         """
         Spins up and runs a command on a container representing a
         docker compose service
@@ -77,12 +80,12 @@ class Sykle():
             # NB: as of this comment, docker-compose does not have an
             #     --env-file option. If it did, we would use it here.
             #     See: https://github.com/docker/compose/issues/6170
-            env = dotenv.dotenv_values(env_file)
+            env = self._read_env_file(env_file)
             env_opts = [["-e", "{}={}".format(k, v)] for k, v in env.items()]
             opts = opts + [a for b in env_opts for a in b]
         opts += ['--rm']
         self.dc(
-            input=['run'] + opts + [service or self.default_service] + input,
+            input=['run'] + opts + [service] + input,
             docker_type=docker_type,
             docker_vars=docker_vars
         )
@@ -91,7 +94,7 @@ class Sykle():
         """Runs a command on a running service container"""
         input = ['sh', '-c'] + input
         self.dc(
-            input=['exec', service or self.default_service] + input,
+            input=['exec', service] + input,
             docker_type=docker_type,
         )
 
@@ -132,14 +135,14 @@ class Sykle():
         self._run_tests(
             self.unittest_config,
             warning='No unittests configured!',
-            input=input, service=None
+            input=input, service=service
         )
 
     def e2e(self, input=[], service=None):
         self._run_tests(
             self.e2e_config,
             warning='No end to end tests configured!',
-            input=input, service=None
+            input=input, service=service
         )
 
     def push(self, docker_vars={}):

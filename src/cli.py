@@ -96,13 +96,6 @@ def _get_docker_type(args):
     return 'dev'
 
 
-def _load_docker_vars_for_deployment(config, deployment):
-    return Config.interpolate_env_values(
-        config.for_deployment(deployment).get('docker_vars', {}),
-        os.environ
-    )
-
-
 def main():
     args = docopt(__doc__, version=__version__, options_first=True)
 
@@ -149,7 +142,7 @@ def main():
     elif args['build']:
         docker_vars = {}
         if docker_type == 'prod':
-            docker_vars = _load_docker_vars_for_deployment(config, deployment)
+            docker_vars = config.docker_vars_for_deployment(deployment)
         elif args['--deployment']:
             print(
                 '\033[93m' +
@@ -167,7 +160,7 @@ def main():
     elif args['e2e']:
         sykle.e2e(input=args['INPUT'], service=service)
     elif args['push']:
-        docker_vars = _load_docker_vars_for_deployment(config, deployment)
+        docker_vars = config.docker_vars_for_deployment(deployment)
         sykle.push(docker_vars=docker_vars)
     elif args['ssh_cp']:
         deployment_config = config.for_deployment(deployment)
@@ -183,7 +176,7 @@ def main():
         sykle.deployment_ssh(target=deployment_config['target'])
     elif args['deploy']:
         deployment_config = config.for_deployment(deployment)
-        docker_vars = deployment_config.get('docker_vars', {})
+        docker_vars = config.docker_vars_for_deployment(deployment)
         env_file = deployment_config.get('env_file', args['--env'])
         target = deployment_config['target']
         sykle.deploy(target=target, env_file=env_file, docker_vars=docker_vars)
