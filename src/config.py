@@ -125,6 +125,12 @@ class Config():
     class ConfigFileDecodeError(Exception):
         pass
 
+    class UnknownDeploymentException(Exception):
+        pass
+
+    class InvalidDeploymentException(Exception):
+        pass
+
     @staticmethod
     def init(enable_print=False):
         if os.path.isfile(Config.FILENAME):
@@ -231,6 +237,12 @@ class Config():
         self.deployments = deployments
         self.plugins = plugins
 
+    def docker_vars_for_deployment(self, name):
+        return Config.interpolate_env_values(
+            self.for_deployment(name).get('docker_vars', {}),
+            os.environ
+        )
+
     def for_plugin(self, name):
         return self.plugins.get(name, {})
 
@@ -240,9 +252,9 @@ class Config():
 
         deployment = self.deployments.get(name)
         if not deployment:
-            raise Exception('Unknown deployment "{}"'.format(name))
+            raise Config.UnknownDeploymentException('Unknown deployment "{}"'.format(name))
         if not deployment.get('target'):
-            raise Exception('Deployment "{}" has no target!'.format(name))
+            raise Config.InvalidDeploymentException('Deployment "{}" has no target!'.format(name))
 
         env_file = deployment.get('env_file')
         env_values = {}
