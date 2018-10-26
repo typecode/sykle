@@ -14,9 +14,9 @@ node {
 
 def test() {
   stage('Test') {
-    sh '''
-      python -m unittest discover test "*test.py"
-    '''
+    // sh '''
+    //   python -m unittest discover test "*test.py"
+    // '''
   }
 }
 
