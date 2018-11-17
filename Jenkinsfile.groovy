@@ -17,7 +17,7 @@ node {
 def test() {
   stage('Test') {
     sh '''
-      python3 setup.py test
+      python3 -m setup.py nosetests
     '''
   }
 }
