@@ -1,12 +1,14 @@
-from .dc_runner import DCRunner
-from .call_subprocess import call_subprocess
-import dotenv
+# __init__.py
+
+__version__ = '0.3.0'
 
 
 class Sykle():
     """
     Class for programatically invoking Sykle
     """
+    version = __version__
+
     def __init__(
         self, project_name='sykle-project',
         unittest_config=[], e2e_config=[],
@@ -22,6 +24,8 @@ class Sykle():
             predeploy_config (array[dict]): Array with predeploy steps
             aliases (dict): Dictionary defining custom commands
         """
+        from .call_subprocess import call_subprocess
+        self.call_subprocess = call_subprocess
         self.aliases = aliases
         self.debug = debug
         self.project_name = project_name
@@ -30,6 +34,7 @@ class Sykle():
         self.unittest_config = unittest_config
 
     def _read_env_file(self, env_file):
+        import dotenv
         return dotenv.dotenv_values(env_file)
 
     def _run_tests(self, configs, warning=None, input=[], service=None):
@@ -61,16 +66,18 @@ class Sykle():
             'docker-compose', '-f', 'docker-compose.prod.yml'
         ]
 
-    def dc(self, input, docker_type='dev', docker_vars={}):
+    def dc(self, input, docker_type='dev', docker_vars={}, target=None):
         """Runs a command with the correct docker compose file(s)"""
+        from .dc_runner import DCRunner
         DCRunner(
             type=docker_type,
             project_name=self.project_name,
             debug=self.debug,
             docker_vars=docker_vars,
+            target=target
         ).call(input)
 
-    def dc_run(self, input, service, docker_type='dev', env_file=None, docker_vars={}):
+    def dc_run(self, input, service, docker_type='dev', env_file=None, docker_vars={}, target=None):
         """
         Spins up and runs a command on a container representing a
         docker compose service
@@ -87,15 +94,17 @@ class Sykle():
         self.dc(
             input=['run'] + opts + [service] + input,
             docker_type=docker_type,
-            docker_vars=docker_vars
+            docker_vars=docker_vars,
+            target=target
         )
 
-    def dc_exec(self, input, service=None, docker_type='dev'):
+    def dc_exec(self, input, service=None, docker_type='dev', docker_vars={}):
         """Runs a command on a running service container"""
         input = ['sh', '-c'] + input
         self.dc(
             input=['exec', service] + input,
             docker_type=docker_type,
+            dovker_vars=docker_vars
         )
 
     def build(self, docker_type='dev', docker_vars={}):
@@ -159,17 +168,17 @@ class Sykle():
         command = ['scp', '-o', 'StrictHostKeyChecking=no']
         command += input
         command += [target + ":{}".format(dest)]
-        call_subprocess(command, debug=self.debug)
+        self.call_subprocess(command, debug=self.debug)
 
     def deployment_exec(self, input, target):
         """Runs a command on the deployment"""
         command = ['ssh', '-o', 'StrictHostKeyChecking=no', target]
         command += input
-        call_subprocess(command, debug=self.debug)
+        self.call_subprocess(command, debug=self.debug)
 
     def deployment_ssh(self, target):
         """Opens an ssh connection to the deployment"""
-        call_subprocess(['ssh', target], debug=self.debug)
+        self.call_subprocess(['ssh', target], debug=self.debug)
 
     def predeploy(self, env_file=None, docker_vars={}):
         for config in self.predeploy_config:
@@ -196,12 +205,12 @@ class Sykle():
         self.deployment_exec(command + ['pull'], target=target)
         self.deployment_exec(command + ['up', '-d'], target=target)
 
-    def run_alias(self, alias, input=[], docker_type=None):
+    def run_alias(self, alias, input=[], docker_type=None, docker_vars={}, target=None):
         alias_config = self.aliases.get(alias)
         is_exec = alias_config.get('exec', False)
         command = alias_config['command'].split(' ') + input
         service = alias_config['service']
-        kwargs = {'input': command, 'service': service}
+        kwargs = {'docker_vars': docker_vars, 'input': command, 'service': service, 'target': target}
 
         if is_exec:
             self.dc_exec(**kwargs)

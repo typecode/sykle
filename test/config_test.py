@@ -1,4 +1,4 @@
-from src.config import Config
+from sykle.config import Config
 from unittest.mock import patch
 import unittest
 
