@@ -121,7 +121,6 @@ def main():
 
     # --- Set up argument defaults based on config ---
 
-    service = args['--service'] or config.default_service
     deployment = args['--deployment'] or config.default_deployment
 
     # --- Create sykle instance ---
@@ -140,8 +139,10 @@ def main():
     if args['dc']:
         sykle.dc(input=args['INPUT'], docker_type=docker_type)
     elif args['dc_run']:
+        service = args['--service'] or config.default_service
         sykle.dc_run(input=args['INPUT'], docker_type=docker_type, service=service)
     elif args['dc_exec']:
+        service = args['--service'] or config.default_service
         sykle.dc_exec(input=args['INPUT'], docker_type=docker_type, service=service)
     elif args['build']:
         docker_vars = {}
@@ -160,9 +161,9 @@ def main():
     elif args['down']:
         sykle.down(docker_type=docker_type)
     elif args['unittest']:
-        sykle.unittest(input=args['INPUT'], service=service)
+        sykle.unittest(input=args['INPUT'], service=args['--service'])
     elif args['e2e']:
-        sykle.e2e(input=args['INPUT'], service=service)
+        sykle.e2e(input=args['INPUT'], service=args['--service'])
     elif args['push']:
         docker_vars = config.docker_vars_for_deployment(deployment)
         sykle.push(docker_vars=docker_vars)
