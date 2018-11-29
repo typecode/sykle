@@ -1,7 +1,7 @@
 """Sync PG Data
 
 Usage:
-  syk sync_pg_data truncate --dest=<name> [--debug]
+  syk sync_pg_data recreate --dest=<name> [--debug]
   syk sync_pg_data restore --dest=<name> [--file=<name>] [--debug]
   syk sync_pg_data dump --src=<name> [--debug]
   syk sync_pg_data --src=<name> --dest=<name> [--debug]
@@ -15,14 +15,18 @@ Options:
   --file=<name>     Restore from a file
 
 Description:
-  truncate          Removes all data on db
-  restore           Restores from a file
+  recreate          Drops and then recreates a database (with data)
   dump              Dumps data to a file
+  restore           Restores from a file
 
 Example .sykle.json:
   {
      "plugins": {
         "sync_pg_data": {
+            "dependent_services": [],    // List of any services that should be
+                                         // stopped while syncing and restarted
+                                         // afterwards. (OPTIONAL)
+
             "local": {                   // Name of location
                 "env_file": ".env",      // Envfile for args to use (OPTIONAL)
                 "write": true,           // Allow writes to location
@@ -59,7 +63,8 @@ class Plugin(IPlugin):
         return os.path.join(self.dump_dir, filename)
 
     def _get_location_args(self, location_name):
-        location = self.config.get(location_name)
+        locations = self.config.get("locations", {})
+        location = locations.get(location_name)
         if location is None:
             raise Exception(
                 'Unknown location "{}" (check "sync_pg_data" config)'
@@ -95,11 +100,10 @@ class Plugin(IPlugin):
         print('Dumping "{}" to "{}"...'.format(location, dump_file))
         call_subprocess(
             command=[
-                'pg_dump', '-C', '-h', args['HOST'],
+                'pg_dump', '-h', args['HOST'],
                 '-v', '-U', args['USER'], args['NAME'],
                 '-p', str(args.get('PORT', 5432)),
                 '-f', dump_file,
-                '--data-only',
                 '--format', 'tar'
             ],
             env={'PGPASSWORD': str(args['PASSWORD'])},
@@ -121,44 +125,45 @@ class Plugin(IPlugin):
                 '--username', args['USER'],
                 '--port', str(args.get('PORT', 5432)),
                 '--dbname', args['NAME'],
-                '--disable-triggers', restore_file,
-                '--data-only'
+                restore_file
             ],
             env={'PGPASSWORD': str(args['PASSWORD'])},
             debug=debug
         )
         print('Restored "{}" to "{}".'.format(restore_file, location))
 
-    def truncate(self, location, debug=False):
+    def recreate(self, location, debug=False):
         """
-        Deletes all data in the given location. (Does NOT drop tables)
+        Deletes all data in the given location.
         """
-        # Double check to ensure we aren't truncating prod
+        # Double check to ensure we aren't deleting write protected data
         self.check_write_permissions(location)
         args = self._get_location_args(location)
-        psql_command = (
-            " DO \$\$ DECLARE statements CURSOR FOR SELECT " +
-            "tablename FROM pg_tables WHERE tableowner = '{}' "
-            .format(args['NAME']) +
-            "AND schemaname = 'public'; " +
-            "BEGIN FOR stmt IN statements LOOP EXECUTE " +
-            "'TRUNCATE TABLE ' || quote_ident(stmt.tablename) || '" +
-            " CASCADE;'; END LOOP; END; \$\$ LANGUAGE plpgsql;"
-        )
 
-        print('Truncating "{}"...'.format(location))
+        print('Droping "{}"...'.format(location))
         call_subprocess(
             command=[
-                'psql', '--host', args['HOST'],
+                'dropdb', '--host', args['HOST'],
                 '--username', args['USER'],
                 '--port', str(args.get('PORT', 5432)),
-                '-d', args['NAME'],
-                '-c', '"{}"'.format(psql_command),
+                args['NAME']
             ],
             env={'PGPASSWORD': str(args['PASSWORD'])},
             debug=debug
         )
-        print('Truncated "{}".'.format(location))
+        print('Dropped "{}".'.format(location))
+        print('Creating "{}"...'.format(location))
+        call_subprocess(
+            command=[
+                'createdb', '--host', args['HOST'],
+                '--username', args['USER'],
+                '--port', str(args.get('PORT', 5432)),
+                args['NAME']
+            ],
+            env={'PGPASSWORD': str(args['PASSWORD'])},
+            debug=debug
+        )
+        print('Created "{}".'.format(location))
 
     def confirm_delete(self, location):
         return input(
@@ -182,7 +187,8 @@ class Plugin(IPlugin):
             .format(restore_file, location)) == 'y'
 
     def check_write_permissions(self, location):
-        if not self.config.get(location).get('write'):
+        locations = self.config.get("locations", {})
+        if not locations.get(location).get('write'):
             raise Exception(
                 'Cannot delete/write data to "{}" '.format(location) +
                 '("write" is not set to true)')
@@ -197,16 +203,21 @@ class Plugin(IPlugin):
         src = args.get('--src')
         dest = args.get('--dest')
         debug = args.get('--debug')
+        self.sykle.debug = debug
 
-        if args['truncate']:
+        dependent_services = self.config.get("dependent_services", [])
+        for service in dependent_services:
+            self.sykle.dc(["stop", service])
+
+        if args['recreate']:
             self.check_write_permissions(dest)
             if self.confirm_delete(dest):
-                self.truncate(dest, debug)
+                self.recreate(dest, debug)
         elif args['restore']:
             self.check_write_permissions(dest)
             file = args['--file'] or self.most_recent_backup()
             if self.confirm_restore(file, dest) and self.confirm_delete(dest):
-                self.truncate(dest, debug)
+                self.recreate(dest, debug)
                 self.restore(dest, file, debug)
         elif args['dump']:
             dump_file = self.get_dump_file_name(src)
@@ -217,5 +228,8 @@ class Plugin(IPlugin):
             dump_file = self.get_dump_file_name(src)
             if self.confirm_delete(dest) and self.confirm_dump(dump_file):
                 self.dump(src, dump_file, debug)
-                self.truncate(dest, debug)
+                self.recreate(dest, debug)
                 self.restore(dest, dump_file, debug)
+
+        for service in dependent_services:
+            self.sykle.dc(["start", service])
