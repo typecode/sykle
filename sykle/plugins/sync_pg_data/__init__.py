@@ -42,7 +42,7 @@ Example .sykle.json:
   }
 """
 
-__version__ = '0.0.3'
+__version__ = '0.1.0'
 
 from sykle.call_subprocess import call_subprocess
 from sykle.plugin_utils import IPlugin
