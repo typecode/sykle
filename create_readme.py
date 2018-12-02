@@ -4,7 +4,7 @@ from sykle.config import Config
 import os
 import chevron
 
-PLUGINS_PATH = os.path.join(os.path.dirname(__file__), 'sykle.plugins')
+PLUGINS_PATH = os.path.join(os.path.dirname(__file__), 'sykle/plugins')
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'README.mustache')
 README_PATH = os.path.join(os.path.dirname(__file__), 'README.md')
 
@@ -22,6 +22,7 @@ def create_readme(template, destination, docstring):
 
     if os.path.isfile(destination):
         os.chmod(destination, 0o644)
+
     with open(destination, 'w+', encoding='utf-8') as f:
         f.write(long_description)
 

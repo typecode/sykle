@@ -2,13 +2,19 @@
 
 Wrapper around `pg_restore`, `pg_dump` and `psql` that allows you to sync data from one location to another.
 
-### Data only
+### Usage Instructions
 
-This command does NOT do a full database dump and restore. Dumps and restores DATA ONLY so we can sync apps that still have active connections. This means all tables in the source that you would like to link to the destination must be present.
+This command will sync BOTH data and the schema. This has a couple implications:
 
-### Truncation
-
-In order to avoid foreign key constraint errors when restoring data, any existing data must be removed. This means *THE ORIGINAL DESTINATION DATA WILL BE REMOVED*.
+- You will need to ensure that the place you are syncing FROM has code that is either the SAME or is OLDER than the place you are syncing to. Although you **COULD** dump data from a newer codebase into data from an older codebase, if the database schema has changed, the code and migrations will not work properly.
+  - `production -> staging` ✅
+  - `staging -> development` ✅
+  - `production -> development` ✅
+  - ~~`staging -> production`~~ ❌
+  - ~~`development -> staging`~~ ❌
+  - ~~`development -> production`~~ ❌
+- Any services using the destination database will need to be stopped. You can use the `dependent_services` section of the config to list docker-compose services that should automatically be stopped and restarted.
+- Syncing will DELETE all data in the destination database and replace it with data from the source. You can make a backup before syncing using the `dump` command
 
 ### Why put this in syk?
 
@@ -37,7 +43,7 @@ Usage instructions can be viewed after installation with `sykle sync_pg_data --h
 Sync PG Data
 
 Usage:
-  syk sync_pg_data truncate --dest=<name> [--debug]
+  syk sync_pg_data recreate --dest=<name> [--debug]
   syk sync_pg_data restore --dest=<name> [--file=<name>] [--debug]
   syk sync_pg_data dump --src=<name> [--debug]
   syk sync_pg_data --src=<name> --dest=<name> [--debug]
@@ -51,14 +57,18 @@ Options:
   --file=<name>     Restore from a file
 
 Description:
-  truncate          Removes all data on db
-  restore           Restores from a file
+  recreate          Drops and then recreates a database (with data)
   dump              Dumps data to a file
+  restore           Restores from a file
 
 Example .sykle.json:
   {
      "plugins": {
         "sync_pg_data": {
+            "dependent_services": [],    // List of any services that should be
+                                         // stopped while syncing and restarted
+                                         // afterwards. (OPTIONAL)
+
             "local": {                   // Name of location
                 "env_file": ".env",      // Envfile for args to use (OPTIONAL)
                 "write": true,           // Allow writes to location
