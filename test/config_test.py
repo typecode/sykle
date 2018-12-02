@@ -12,8 +12,8 @@ class ConfigTestCase(unittest.TestCase):
                 'staging': {
                     'target': 'some-target',
                     'docker_vars': {
-                        'non_env_var': 'thing',
-                        'env_var': '$ENV_VAR'
+                        'non_env_var': u'thing',
+                        'env_var': u'$ENV_VAR'
                     }
                 }
             }
@@ -33,8 +33,8 @@ class ConfigTestCase(unittest.TestCase):
 
     def test_interpolate_env_values(self):
         interpolated = Config.interpolate_env_values(
-            {'non_env_var': 'A', 'env_var': '$BUILD_NUMBER'},
-            {'BUILD_NUMBER': '1'}
+            {'non_env_var': 'A', 'env_var': u'$BUILD_NUMBER'},
+            {u'BUILD_NUMBER': u'1'}
         )
         self.assertEqual(
             interpolated,
