@@ -8,6 +8,7 @@ setup(
     description='Rake like docker-compose coordinator',
     author='Type/Code',
     author_email='eric@typecode.com',
+    python_requires='>3.4',
     classifier=[
         'Intended Audience :: Developers',
         'Topic :: Utilities',
