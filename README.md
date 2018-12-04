@@ -20,7 +20,7 @@ Sykle is a cli tool for calling commonly used commands in docker-compose project
 
 ### Requirements
 
-- `python 3.7` (may work on earlier versions of 3, but only tested on 3.7. Plugins do NOT work in python version 2.7)
+- `python 3.4` (may work on earlier versions of 3, but not tested. Plugins do NOT work in python version 2.7)
 - `docker` (locally and on deployment target)
 - `docker-compose` (locally and on deployment target)
 - `ssh`
@@ -28,7 +28,13 @@ Sykle is a cli tool for calling commonly used commands in docker-compose project
 
 ### Installation
 
+#### If python3 is your default installation, you can use pip
+
 `pip install git+ssh://git@github.com/typecode/sykle.git --upgrade`
+
+#### If you have a separate `python3` installation, you should use pip3
+
+`pip3 install git+ssh://git@github.com/typecode/sykle.git --upgrade`
 
 ### Configuration
 
