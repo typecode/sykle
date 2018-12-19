@@ -143,25 +143,27 @@ In addition to your `docker-compose` files, you'll need a `.sykle.json`. An exam
     "plugins": {
       // name of the plugin the settings apply to
       "sync_pg_data": {
-        "staging": {
-          "env_file": ".env.staging",
-          "args": {
-            "HOST": "storefront.staging.sharptype.co",
-            "PASSWORD": "$POSTGRES_PASSWORD",
-            "USER": "$POSTGRES_USER",
-            "NAME": "$POSTGRES_DB"
-          }
-        },
-        "local": {
-          "env_file": ".env",
-          "write": true,
-          "args": {
-            "HOST": "localhost",
-            "PASSWORD": "thisisbogus",
-            "USER": "sharptype",
-            "NAME": "sharptype",
-            "PORT": 8887
-          }
+        "locations": {
+            "staging": {
+              "env_file": ".env.staging",
+              "args": {
+                "HOST": "storefront.staging.sharptype.co",
+                "PASSWORD": "$POSTGRES_PASSWORD",
+                "USER": "$POSTGRES_USER",
+                "NAME": "$POSTGRES_DB"
+              }
+            },
+            "local": {
+              "env_file": ".env",
+              "write": true,
+              "args": {
+                "HOST": "localhost",
+                "PASSWORD": "thisisbogus",
+                "USER": "sharptype",
+                "NAME": "sharptype",
+                "PORT": 8887
+              }
+            }
         }
       }
     }
