@@ -56,8 +56,11 @@ Description:
 from .plugin_utils import Plugins
 from .config import Config
 from . import Sykle, __version__
+from .call_subprocess import call_subprocess
 from docopt import docopt
 import os
+import sys
+import time
 
 config_example_PATH = os.path.join(
     os.path.dirname(__file__),
@@ -101,6 +104,28 @@ def main():
     args = docopt(__doc__, version=__version__, options_first=True)
 
     # --- Run commands that do not require sykle instance ---
+
+    # NB: should remove this if there are no more Type/Code projects using
+    #     ./run.sh files
+    if os.path.isfile('run.sh'):
+        CEND = '\33[0m'
+        CYELLOW = '\33[33m'
+
+        print(CYELLOW)
+        print('========================UPGRADE===========================')
+        print('                 Legacy run.sh detected!                  ')
+        print('Please remove and use .sykle.json and .syk-plugins instead')
+        print('==========================================================')
+        print(CEND)
+        time.sleep(1)
+
+        print('Trying to run command with run.sh...')
+        # NB: always run debug when trying to use legacy ./run.sh file
+        exit_code = call_subprocess(['./run.sh'] + sys.argv[1:], debug=True)
+        if exit_code == 1:
+            print('run.sh command failed. Trying to run normally...')
+        else:
+            return
 
     if args['init']:
         Config.init(enable_print=True)
