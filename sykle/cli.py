@@ -8,8 +8,8 @@ Usage:
   syk [--debug] [--config=<file>] [--test | --prod] [--deployment=<name>] build
   syk [--debug] [--config=<file>] [--test | --prod] up
   syk [--debug] [--config=<file>] [--test | --prod] down
-  syk [--debug] [--config=<file>] [--service=<service>] unittest [INPUT ...]
-  syk [--debug] [--config=<file>] [--service=<service>] e2e [INPUT ...]
+  syk [--debug] [--config=<file>] [--service=<service>] [--fast] unittest [INPUT ...]
+  syk [--debug] [--config=<file>] [--service=<service>] [--fast] e2e [INPUT ...]
   syk [--debug] [--config=<file>] [--deployment=<name>] push
   syk [--debug] [--config=<file>] [--deployment=<name>] ssh
   syk [--debug] [--config=<file>] [--deployment=<name>] [--dest=<dest>] ssh_cp [INPUT ...]
@@ -32,6 +32,8 @@ Option
   --service=<service>     Docker service on which to run the command
   --debug                 Prints debug information
   --deployment=<name>     Uses config for the given deployment
+  --fast                  Runs tests without building images/containers
+                          (you will need to have 'syk --test up' running)
 
 Description:
   dc              Runs docker-compose command
@@ -161,9 +163,15 @@ def main():
     elif args['down']:
         sykle.down(docker_type=docker_type)
     elif args['unittest']:
-        sykle.unittest(input=args['INPUT'], service=args['--service'])
+        sykle.unittest(
+            input=args['INPUT'], service=args['--service'],
+            fast=args['--fast']
+        )
     elif args['e2e']:
-        sykle.e2e(input=args['INPUT'], service=args['--service'])
+        sykle.e2e(
+            input=args['INPUT'], service=args['--service'],
+            fast=args['--fast']
+        )
     elif args['push']:
         docker_vars = config.docker_vars_for_deployment(deployment)
         sykle.push(docker_vars=docker_vars)

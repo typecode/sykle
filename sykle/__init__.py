@@ -37,18 +37,23 @@ class Sykle():
         import dotenv
         return dotenv.dotenv_values(env_file)
 
-    def _run_tests(self, configs, warning=None, input=[], service=None):
+    def _run_tests(
+        self, configs, warning=None, input=[],
+        service=None, fast=False
+    ):
         if not configs and warning:
             print(warning)
             return
 
-        self.build(docker_type='test')
+        if not fast:
+            self.build(docker_type='test')
+
         for config in configs:
             if service and (config['service'] != service):
                 continue
             command = config['command'].split(' ') + input
-            self.dc_run(command, service=config['service'], docker_type='test')
-        self.down(docker_type='test')
+            service = config['service']
+            self.dc_exec(command, service=service, docker_type='test')
 
     def _add_latest_build_tag(self, docker_vars):
         # TODO: This assumes the docker compose file has
@@ -77,7 +82,10 @@ class Sykle():
             target=target
         ).call(input)
 
-    def dc_run(self, input, service, docker_type='dev', env_file=None, docker_vars={}, target=None):
+    def dc_run(
+        self, input, service, docker_type='dev',
+        env_file=None, docker_vars={}, target=None
+    ):
         """
         Spins up and runs a command on a container representing a
         docker compose service
@@ -100,11 +108,10 @@ class Sykle():
 
     def dc_exec(self, input, service=None, docker_type='dev', docker_vars={}):
         """Runs a command on a running service container"""
-        input = ['sh', '-c'] + input
         self.dc(
             input=['exec', service] + input,
             docker_type=docker_type,
-            dovker_vars=docker_vars
+            docker_vars=docker_vars
         )
 
     def build(self, docker_type='dev', docker_vars={}):
@@ -140,18 +147,20 @@ class Sykle():
             docker_type=docker_type
         )
 
-    def unittest(self, input=[], service=None):
+    def unittest(self, input=[], service=None, fast=False):
         self._run_tests(
             self.unittest_config,
             warning='No unittests configured!',
-            input=input, service=service
+            input=input, service=service,
+            fast=fast
         )
 
-    def e2e(self, input=[], service=None):
+    def e2e(self, input=[], service=None, fast=False):
         self._run_tests(
             self.e2e_config,
             warning='No end to end tests configured!',
-            input=input, service=service
+            input=input, service=service,
+            fast=fast
         )
 
     def push(self, docker_vars={}):
@@ -168,17 +177,17 @@ class Sykle():
         command = ['scp', '-o', 'StrictHostKeyChecking=no']
         command += input
         command += [target + ":{}".format(dest)]
-        self.call_subprocess(command, debug=self.debug)
+        return self.call_subprocess(command, debug=self.debug)
 
     def deployment_exec(self, input, target):
         """Runs a command on the deployment"""
         command = ['ssh', '-o', 'StrictHostKeyChecking=no', target]
         command += input
-        self.call_subprocess(command, debug=self.debug)
+        return self.call_subprocess(command, debug=self.debug)
 
     def deployment_ssh(self, target):
         """Opens an ssh connection to the deployment"""
-        self.call_subprocess(['ssh', target], debug=self.debug)
+        return self.call_subprocess(['ssh', target], debug=self.debug)
 
     def predeploy(self, env_file=None, docker_vars={}):
         for config in self.predeploy_config:
