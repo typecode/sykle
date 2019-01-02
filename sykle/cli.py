@@ -8,8 +8,8 @@ Usage:
   syk [--debug] [--config=<file>] [--test | --prod] [--deployment=<name>] build
   syk [--debug] [--config=<file>] [--test | --prod] up
   syk [--debug] [--config=<file>] [--test | --prod] down
-  syk [--debug] [--config=<file>] [--service=<service>] unittest [INPUT ...]
-  syk [--debug] [--config=<file>] [--service=<service>] e2e [INPUT ...]
+  syk [--debug] [--config=<file>] [--service=<service>] [--fast] unittest [INPUT ...]
+  syk [--debug] [--config=<file>] [--service=<service>] [--fast] e2e [INPUT ...]
   syk [--debug] [--config=<file>] [--deployment=<name>] push
   syk [--debug] [--config=<file>] [--deployment=<name>] ssh
   syk [--debug] [--config=<file>] [--deployment=<name>] [--dest=<dest>] ssh_cp [INPUT ...]
@@ -32,6 +32,8 @@ Option
   --service=<service>     Docker service on which to run the command
   --debug                 Prints debug information
   --deployment=<name>     Uses config for the given deployment
+  --fast                  Runs tests without building images/containers
+                          (you will need to have 'syk --test up' running)
 
 Description:
   dc              Runs docker-compose command
@@ -54,8 +56,11 @@ Description:
 from .plugin_utils import Plugins
 from .config import Config
 from . import Sykle, __version__
+from .call_subprocess import call_subprocess
 from docopt import docopt
 import os
+import sys
+import time
 
 config_example_PATH = os.path.join(
     os.path.dirname(__file__),
@@ -99,6 +104,31 @@ def main():
     args = docopt(__doc__, version=__version__, options_first=True)
 
     # --- Run commands that do not require sykle instance ---
+
+    # NB: should remove this if there are no more Type/Code projects using
+    #     ./run.sh files
+    if os.path.isfile('run.sh'):
+        CEND = '\33[0m'
+        CYELLOW = '\33[33m'
+        CRED = '\33[31m'
+
+        print(CYELLOW)
+        print('========================UPGRADE===========================')
+        print('                 Legacy run.sh detected!                  ')
+        print('  Will try to run commands through ./run.sh until removed ')
+        print('==========================================================')
+        print(CEND)
+        time.sleep(1)
+
+        print('Trying to run command with run.sh...')
+        # NB: always run debug when trying to use legacy ./run.sh file
+        p = call_subprocess(['./run.sh'] + sys.argv[1:], debug=True)
+        if p.returncode == 1:
+            print(CRED)
+            print('command failed through run.sh. Trying to run normally...')
+            print(CEND)
+        else:
+            return
 
     if args['init']:
         Config.init(enable_print=True)
@@ -161,9 +191,15 @@ def main():
     elif args['down']:
         sykle.down(docker_type=docker_type)
     elif args['unittest']:
-        sykle.unittest(input=args['INPUT'], service=args['--service'])
+        sykle.unittest(
+            input=args['INPUT'], service=args['--service'],
+            fast=args['--fast']
+        )
     elif args['e2e']:
-        sykle.e2e(input=args['INPUT'], service=args['--service'])
+        sykle.e2e(
+            input=args['INPUT'], service=args['--service'],
+            fast=args['--fast']
+        )
     elif args['push']:
         docker_vars = config.docker_vars_for_deployment(deployment)
         sykle.push(docker_vars=docker_vars)

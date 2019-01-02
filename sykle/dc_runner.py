@@ -1,4 +1,3 @@
-import subprocess
 from .call_subprocess import call_subprocess
 
 
@@ -43,13 +42,9 @@ class DCRunner():
             ['-f', self.docker_compose_file]
         )
 
-        try:
-            call_subprocess(
-                base_command + input,
-                debug=self.debug,
-                env=self.docker_vars,
-                target=self.target
-            )
-        except KeyboardInterrupt:
-            print('Exiting...')
-            subprocess.call(base_command + ['down'])
+        return call_subprocess(
+            base_command + input,
+            debug=self.debug,
+            env=self.docker_vars,
+            target=self.target
+        )

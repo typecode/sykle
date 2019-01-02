@@ -26,15 +26,16 @@ Example .sykle.json:
             "dependent_services": [],    // List of any services that should be
                                          // stopped while syncing and restarted
                                          // afterwards. (OPTIONAL)
-
-            "local": {                   // Name of location
-                "env_file": ".env",      // Envfile for args to use (OPTIONAL)
-                "write": true,           // Allow writes to location
-                "args": {
-                   "PORT": 5432,         // Port for postgres (OPTIONAL)
-                   "HOST": "$PG_HOST",   // Host for postgres
-                   "USER": "postgres",   // Username for postgres
-                   "PASSWORD": "asdf"    // Password for postgres
+            "locations": {
+                "local": {                   // Name of location
+                    "env_file": ".env",      // Envfile for args to use (OPTIONAL)
+                    "write": true,           // Allow writes to location
+                    "args": {
+                       "PORT": 5432,         // Port for postgres (OPTIONAL)
+                       "HOST": "$PG_HOST",   // Host for postgres
+                       "USER": "postgres",   // Username for postgres
+                       "PASSWORD": "asdf"    // Password for postgres
+                    }
                 }
             }
         }
