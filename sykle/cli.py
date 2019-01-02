@@ -110,20 +110,23 @@ def main():
     if os.path.isfile('run.sh'):
         CEND = '\33[0m'
         CYELLOW = '\33[33m'
+        CRED = '\33[31m'
 
         print(CYELLOW)
         print('========================UPGRADE===========================')
         print('                 Legacy run.sh detected!                  ')
-        print('Please remove and use .sykle.json and .syk-plugins instead')
+        print('  Will try to run commands through ./run.sh until removed ')
         print('==========================================================')
         print(CEND)
         time.sleep(1)
 
         print('Trying to run command with run.sh...')
         # NB: always run debug when trying to use legacy ./run.sh file
-        exit_code = call_subprocess(['./run.sh'] + sys.argv[1:], debug=True)
-        if exit_code == 1:
-            print('run.sh command failed. Trying to run normally...')
+        p = call_subprocess(['./run.sh'] + sys.argv[1:], debug=True)
+        if p.returncode == 1:
+            print(CRED)
+            print('command failed through run.sh. Trying to run normally...')
+            print(CEND)
         else:
             return
 
