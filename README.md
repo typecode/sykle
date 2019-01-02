@@ -4,7 +4,6 @@ Sykle is a cli tool for calling commonly used commands in docker-compose project
 
 #### What sykle does
 
-
 - Enforces 3 docker-compose environments: `dev`, `test`, and `prod`
 - Provides commands for spinning up dev, running tests, and deploying to prod
   - (Assumes you are deploying to a single remote instance running docker-compose)
@@ -38,7 +37,7 @@ Sykle is a cli tool for calling commonly used commands in docker-compose project
 
 ### Configuration
 
-Because sykle tries to make as few assumptions about your project as possible, you'll need to declaritively define how your app should run via static configuration files
+Because sykle tries to make as few assumptions about your project as possible, you'll need to declaratively define how your app should run via static configuration files
 
 #### Docker Compose
 
@@ -61,15 +60,19 @@ Usage instructions can be viewed after installation with `syk --help`
 
 This will not show any info for plugins. In order to view installed plugins, run `syk plugins`. To view help for a specfic plugin, run `syk <plugin_name> --help`.
 
-#### Running Tests (for sykle)
+### Legacy ./run.sh
+
+Prior to sykle, the predominate pattern at typecode was to create a `./run.sh` file with a list of commands. For convenience, if a `./run.sh` file is found, sykle will try to run commands through `./run.sh` before running through sykle.
+
+### Running Tests (for sykle)
 
 Unittests (that test sykle) can be run via `python setup.py test`
 
-#### Writing plugins
+### Writing plugins
 
 There are two types of plugins: **global** plugins and **local** plugins.
 
-##### Local Plugins
+#### Local Plugins
 
 Local plugins allow you to create project specific commands. If you have a command or series of commands that you run frequently for a project that are more complicated than an alias, it might make sense to create a local plugin.
 
@@ -114,7 +117,7 @@ Note that `syk` is present in the docopt usage definition before the plugin comm
 
 If you defined your plugin correctly, you should be able to see listed when calling `syk plugins`
 
-##### Global Plugins
+#### Global Plugins
 
 Global plugins are the same as local plugins, but they are added to the `plugins` folder of this repo and are available to anyone who installs sykle.
 
@@ -126,7 +129,7 @@ Global plugins are the same as local plugins, but they are added to the `plugins
 - [x] Add `init` command to create `.sykle.json`
 - [x] ~Scripts section in `.sykle.json`~ Local plugins
 -  ~REAMDE.md generation on commit~ (unecessarily complex)
-- [ ] Fallback to `./run.sh` if it exists and `.sykle.json` does not
+- [x] Fallback to `./run.sh` if it exists and `.sykle.json` does not
 - [ ] User aliases/way to share aliases
 - [ ] Terraform support
 - [ ] Revisit whether `docker-compose` files can/should be shared
