@@ -61,29 +61,9 @@ Usage instructions can be viewed after installation with `syk --help`
 
 This will not show any info for plugins. In order to view installed plugins, run `syk plugins`. To view help for a specfic plugin, run `syk <plugin_name> --help`.
 
-### Development
+#### Running Tests (for sykle)
 
-The README for the main package and each global plugin is generated via mustache (actual README.md files are read only). This allows us to insert the docstrings (which determine command line arguments) into each README so they stay up to date automatically.
-
-When you pull down the repo for the first time, you should run the following command:
-
-```sh
-git config core.hooksPath .githooks
-```
-
-This will make it so that after commit, if there has been a change to the docstrings, an additional "Update README" commit will be created with up to date documentation.
-
-#### Githook Requirements
-
-You will need to install `chevron` for the githooks to work:
-
-```sh
-pip install chevron
-```
-
-#### Running Tests
-
-Unittests can be run via `python setup.py test`
+Unittests (that test sykle) can be run via `python setup.py test`
 
 #### Writing plugins
 
@@ -98,7 +78,7 @@ To create a local plugin:
 1. Create a `.sykle-plugins/` directory in the root of your project (`.sykle-plugins/` should be in same directory as `.sykle.json`)
 2. Add an `__init__.py` file to `.sykle-plugins/`
 3. Add a python file for your plugin to `.sykle-plugins/` (EX: `.sykle-plugins/my_plugin.py`)
-4. Define your plugin like in the exapmle below:
+4. Define your plugin like in the example below:
 
 Example
 ```py
@@ -138,16 +118,14 @@ If you defined your plugin correctly, you should be able to see listed when call
 
 Global plugins are the same as local plugins, but they are added to the `plugins` folder of this repo and are available to anyone who installs sykle.
 
-Any `README.mustache` defined in a plugin folder will have a usage variable provided to it, and will result in a `README.md` being created when code is commited
-
 ### Roadmap
 
 - [x] Move to separate repo
 - [x] Allow user to specify `test` commands
 - [x] Add plugins
-- [x] REAMDE.md generation on ~push to repo~ commit
 - [x] Add `init` command to create `.sykle.json`
 - [x] ~Scripts section in `.sykle.json`~ Local plugins
+-  ~REAMDE.md generation on commit~ (unecessarily complex)
 - [ ] Fallback to `./run.sh` if it exists and `.sykle.json` does not
 - [ ] User aliases/way to share aliases
 - [ ] Terraform support

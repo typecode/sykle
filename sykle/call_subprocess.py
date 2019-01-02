@@ -23,7 +23,13 @@ def call_subprocess(command, env=None, debug=False, target=None):
             print('ENV:', env)
         print('--END COMMAND--')
 
-    if env:
-        subprocess.call(full_command, env=full_env, shell=True)
-    else:
-        subprocess.call(full_command, shell=True)
+    try:
+        if env:
+            p = subprocess.Popen(full_command, env=full_env, shell=True)
+        else:
+            p = subprocess.Popen(full_command, shell=True)
+        p.wait()
+        return p
+    except KeyboardInterrupt:
+        p.wait()
+        return p
