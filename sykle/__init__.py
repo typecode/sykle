@@ -1,6 +1,6 @@
 # __init__.py
 
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 
 
 class Sykle():
@@ -53,7 +53,10 @@ class Sykle():
                 continue
             command = config['command'].split(' ') + input
             service = config['service']
-            self.dc_exec(command, service=service, docker_type='test')
+            if fast:
+                self.dc_exec(command, service=service, docker_type='test')
+            else:
+                self.dc_run(command, service=service, docker_type='test')
 
     def _add_latest_build_tag(self, docker_vars):
         # TODO: This assumes the docker compose file has
