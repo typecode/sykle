@@ -207,10 +207,11 @@ class Config():
         with their associated env vars
         """
         new_dict = {}
-        for (k, v) in dict.items():
-            if v is None or len(v) == 0:
+        for (k, _v) in dict.items():
+            v = '' if _v is None else str(_v)
+            if len(v) == 0:
                 new_dict[k] = ''
-            elif not isinstance(v, str) or v[0] != '$':
+            elif v[0] != '$':
                 new_dict[k] = v
             else:
                 new_dict[k] = env.get(v[1:], '')
