@@ -12,7 +12,7 @@ class Sykle():
     def __init__(
         self, project_name='sykle-project',
         unittest_config=[], e2e_config=[],
-        predeploy_config=[], debug=False,
+        predeploy_config=[], preup_config=[], debug=False,
         aliases={}
     ):
         """
@@ -22,6 +22,7 @@ class Sykle():
             unittest_config (array[dict]): Array of unittest configs
             e2e_config (array[dict]): Array of end to end test configs
             predeploy_config (array[dict]): Array with predeploy steps
+            preup_config (array[dict]): Array with preup steps
             aliases (dict): Dictionary defining custom commands
         """
         from .call_subprocess import call_subprocess
@@ -31,6 +32,7 @@ class Sykle():
         self.project_name = project_name
         self.e2e_config = e2e_config
         self.predeploy_config = predeploy_config
+        self.preup_config = preup_config
         self.unittest_config = unittest_config
 
     def _read_env_file(self, env_file):
@@ -138,6 +140,7 @@ class Sykle():
 
     def up(self, docker_type='dev'):
         """Starts up relevant docker compose services"""
+        self.preup(docker_type=docker_type)
         self.dc(
             input=['up', '--build', '--force-recreate'],
             docker_type=docker_type
@@ -192,15 +195,29 @@ class Sykle():
         """Opens an ssh connection to the deployment"""
         return self.call_subprocess(['ssh', target], debug=self.debug)
 
+    def preup(self, docker_type):
+        for config in self.preup_config:
+            if config.get('service'):
+                self.dc_run(
+                    input=config['command'].split(' '),
+                    service=config['service'],
+                    docker_type=docker_type,
+                )
+            else:
+                self.call_subprocess(config['command'].split(' '))
+
     def predeploy(self, env_file=None, docker_vars={}):
         for config in self.predeploy_config:
-            self.dc_run(
-                input=config['command'].split(' '),
-                service=config['service'],
-                docker_type='prod-build',
-                env_file=env_file,
-                docker_vars=docker_vars
-            )
+            if config.get('service'):
+                self.dc_run(
+                    input=config['command'].split(' '),
+                    service=config['service'],
+                    docker_type='prod-build',
+                    env_file=env_file,
+                    docker_vars=docker_vars
+                )
+            else:
+                self.call_subprocess(config['command'].split(' '))
 
     def deploy(self, target, env_file=None, docker_vars={}):
         """Deploys docker images/static assets and starts services"""
@@ -208,14 +225,16 @@ class Sykle():
         self.push(docker_vars=docker_vars)
         self.deployment_cp([env_file], target=target, dest='~/.env')
         self.deployment_cp(['docker-compose.prod.yml'], target=target)
-        # TODO: might want to make this optional
-        self.deployment_exec(
-            ['docker', 'system', 'prune', '-a', '--force'], target=target
-        )
 
         command = self._remote_docker_compose_command(docker_vars)
         self.deployment_exec(command + ['pull'], target=target)
         self.deployment_exec(command + ['up', '-d'], target=target)
+
+        # cleans up docker system
+        # TODO: might want to make this optional
+        self.deployment_exec(
+            ['docker', 'system', 'prune', '-a', '--force'], target=target
+        )
 
     def run_alias(self, alias, input=[], docker_type=None, docker_vars={}, target=None):
         alias_config = self.aliases.get(alias)

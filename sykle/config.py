@@ -36,11 +36,22 @@ class Config():
             "command": "behave"
         }
     ],
-    // list of commands to invoke before deploying (run sequentially)
+    // list of commands to invoke before deploy (run sequentially)
     "predeploy": [
         {
             "service": "django",
             "command": "django-admin collectstatic --no-input"
+        },
+        {
+            // if no service is specified, will run as normal bash command
+            "command": "aws ecr get-login --region us-east-1"
+        }
+    ],
+    // list of commands to invoke before up (run sequentially)
+    "preup": [
+        {
+            // if no service is specified, will run as normal bash command
+            "command": "syk down"
         }
     ],
     // deployment to use by default (must be listed in deployments section)
@@ -152,6 +163,7 @@ class Config():
                     ("unittest", [{"service": None, "command": None}]),
                     ("e2e", [{"service": None, "command": None}]),
                     ("predeploy", []),
+                    ("preup", []),
                     ("default_deployment", "staging"),
                     ("deployments", {
                         "staging": {
@@ -226,8 +238,8 @@ class Config():
 
     def __init__(
         self, project_name, default_service, default_deployment, plugins={},
-        aliases={}, unittest=[], e2e=[], predeploy=[], deployments={},
-        version=None,
+        aliases={}, unittest=[], e2e=[], predeploy=[], preup=[],
+        deployments={}, version=None,
     ):
         self.version = version
         self.project_name = project_name
@@ -237,6 +249,7 @@ class Config():
         self.unittest = unittest
         self.e2e = e2e
         self.predeploy = predeploy
+        self.preup = preup
         self.deployments = deployments
         self.plugins = plugins
 
