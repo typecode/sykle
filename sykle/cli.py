@@ -160,6 +160,7 @@ def main():
         unittest_config=config.unittest,
         e2e_config=config.e2e,
         predeploy_config=config.predeploy,
+        preup_config=config.preup,
         aliases=config.aliases,
         debug=args['--debug']
     )

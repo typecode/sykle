@@ -36,11 +36,22 @@ class Config():
             "command": "behave"
         }
     ],
-    // list of commands to invoke before deploying (run sequentially)
+    // list of commands to invoke before deploy (run sequentially)
     "predeploy": [
         {
             "service": "django",
             "command": "django-admin collectstatic --no-input"
+        },
+        {
+            // if no service is specified, will run as normal bash command
+            "command": "aws ecr get-login --region us-east-1"
+        }
+    ],
+    // list of commands to invoke before up (run sequentially)
+    "preup": [
+        {
+            // if no service is specified, will run as normal bash command
+            "command": "syk down"
         }
     ],
     // deployment to use by default (must be listed in deployments section)
@@ -152,6 +163,7 @@ class Config():
                     ("unittest", [{"service": None, "command": None}]),
                     ("e2e", [{"service": None, "command": None}]),
                     ("predeploy", []),
+                    ("preup", []),
                     ("default_deployment", "staging"),
                     ("deployments", {
                         "staging": {
@@ -207,10 +219,11 @@ class Config():
         with their associated env vars
         """
         new_dict = {}
-        for (k, v) in dict.items():
-            if v is None or len(v) == 0:
+        for (k, _v) in dict.items():
+            v = '' if _v is None else str(_v)
+            if len(v) == 0:
                 new_dict[k] = ''
-            elif not isinstance(v, str) or v[0] != '$':
+            elif v[0] != '$':
                 new_dict[k] = v
             else:
                 new_dict[k] = env.get(v[1:], '')
@@ -225,8 +238,8 @@ class Config():
 
     def __init__(
         self, project_name, default_service, default_deployment, plugins={},
-        aliases={}, unittest=[], e2e=[], predeploy=[], deployments={},
-        version=None,
+        aliases={}, unittest=[], e2e=[], predeploy=[], preup=[],
+        deployments={}, version=None,
     ):
         self.version = version
         self.project_name = project_name
@@ -236,6 +249,7 @@ class Config():
         self.unittest = unittest
         self.e2e = e2e
         self.predeploy = predeploy
+        self.preup = preup
         self.deployments = deployments
         self.plugins = plugins
 
