@@ -1,14 +1,7 @@
-# __init__.py
-
-__version__ = '0.4.2'
-
-
 class Sykle():
     """
     Class for programatically invoking Sykle
     """
-    version = __version__
-
     def __init__(
         self, project_name='sykle-project',
         unittest_config=[], e2e_config=[],
@@ -78,14 +71,14 @@ class Sykle():
 
     def dc(self, input, docker_type='dev', docker_vars={}, target=None):
         """Runs a command with the correct docker compose file(s)"""
-        from .dc_runner import DCRunner
-        DCRunner(
+        from .call_docker_compose import call_docker_compose
+        call_docker_compose(
             type=docker_type,
             project_name=self.project_name,
             debug=self.debug,
             docker_vars=docker_vars,
             target=target
-        ).call(input)
+        )
 
     def dc_run(
         self, input, service, docker_type='dev',

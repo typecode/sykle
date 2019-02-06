@@ -57,37 +57,39 @@ from .plugin_utils import Plugins
 from .config import Config
 from . import Sykle, __version__
 from .call_subprocess import call_subprocess
+from .colors import CEND, CYELLOW, CRED
 from docopt import docopt
 import os
 import sys
 import time
-
-config_example_PATH = os.path.join(
-    os.path.dirname(__file__),
-    '.sykle.example.json'
-)
 
 
 def _load_config(args):
     config_name = args['--config'] or Config.FILENAME
     try:
         return Config.from_file(config_name)
-    except Config.ConfigFileNotFoundError:
+    except Config.ConfigFileNotFoundException:
         print(
-            '\033[91m' +
+            CRED +
             "Config file '{}' does not exist!\n".format(config_name) +
             "You can create an empty config by running: \n" +
             "    syk init" +
-            '\033[0m'
+            CEND
         )
         return
-    except Config.ConfigFileDecodeError as e:
+    except Config.ConfigFileNotFoundException as e:
         print(
-            '\033[91m' +
+            CRED +
             'Config Decode Error: {}'.format(e) +
-            '\033[0m'
+            CEND
         )
         return
+    except Config.ConfigFileVersionException as e:
+        print(
+            CYELLOW +
+            'Config Version Error: {}'.format(e) +
+            CYELLOW
+        )
 
 
 def _get_docker_type(args):
