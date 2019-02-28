@@ -64,6 +64,18 @@ This will not show any info for plugins. In order to view installed plugins, run
 
 Prior to sykle, the predominate pattern at typecode was to create a `./run.sh` file with a list of commands. For convenience, if a `./run.sh` file is found, sykle will try to run commands through `./run.sh` before running through sykle.
 
+### Connecting to Deployments
+
+Once you have configured deployments, you can connect to them using `syk --deployment=<deployment> ssh`. Sykle does not currently allow you pass any options when sshing into a remove machine and relies on `~/.ssh/config` to pass along the correct credentials. An example config is shown below, and more details on ssh config can be found [here](https://linuxize.com/post/using-the-ssh-config-file/).
+
+```
+Host ec2-3-95-177-93.compute-1.amazonaws.com
+  User ubuntu
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/flir-pb.pem
+```
+
 ### Running Tests (for sykle)
 
 Unittests (that test sykle) can be run via `python setup.py test`
