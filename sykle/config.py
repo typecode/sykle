@@ -99,6 +99,13 @@ class Config():
         "dj": {
             "service": "django",
             "command": "django-admin"
+        },
+        "behave": {
+          "service": "backend",
+          "command": "behave --no-capture --no-skipped",
+          // when env is specified, alias is run using the corresponding
+          // docker compose file
+          "env": "test"
         }
     },
     // defines settings specific to plugins

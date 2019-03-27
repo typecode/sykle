@@ -241,11 +241,12 @@ class Sykle():
         is_exec = alias_config.get('exec', False)
         command = alias_config['command'].split(' ') + input
         service = alias_config['service']
+        _docker_type = alias_config.get('env', docker_type)
         kwargs = {'docker_vars': docker_vars, 'input': command, 'service': service, 'target': target}
 
         if is_exec:
             self.dc_exec(**kwargs)
-        elif docker_type:
-            self.dc_run(docker_type=docker_type, **kwargs)
+        elif _docker_type:
+            self.dc_run(docker_type=_docker_type, **kwargs)
         else:
             self.dc_run(**kwargs)
