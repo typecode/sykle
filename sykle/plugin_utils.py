@@ -21,15 +21,19 @@ class Plugins():
     @staticmethod
     def get_module_loaders():
         plugins = {}
+        plugin_path = sykle.plugins.__path__
 
-        for file_finder, name, _ in pkgutil.iter_modules(sykle.plugins.__path__):
+        for file_finder, name, _ in pkgutil.iter_modules(plugin_path):
             plugins[name] = file_finder.find_loader(name)[0]
 
         plugins_path = os.path.join(os.getcwd(), '.syk-plugins')
         if os.path.isdir(plugins_path):
             for file_finder, name, _ in pkgutil.iter_modules([plugins_path]):
                 if name in plugins:
-                    print('WARNING: local "{}" plugin overwrites global plugin'.format(name))
+                    print(
+                        'WARNING: local "{}" plugin overwrites global plugin'
+                        .format(name)
+                    )
                 plugins[name] = file_finder.find_loader(name)[0]
         return plugins
 
@@ -54,8 +58,14 @@ class IPlugin():
     def _check_compatibility(self):
         required_version = getattr(self, 'REQUIRED_VERSION', None)
         current_version = self.sykle.version
-        if required_version and (LooseVersion(required_version) > LooseVersion(current_version)):
-            raise Exception('Plugin requires sykle {} (using version {})'.format(required_version, current_version))
+        if (
+            required_version and
+            (LooseVersion(required_version) > LooseVersion(current_version))
+        ):
+            raise Exception(
+                'Plugin requires sykle {} (using version {})'
+                .format(required_version, current_version)
+            )
 
     def run(self):
         raise NotImplementedError("Plugin needs a run method!")
