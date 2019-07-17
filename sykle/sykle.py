@@ -2,10 +2,10 @@ from .call_subprocess import call_subprocess
 
 
 class Sykle():
+    version = '0.5.0'
     """
     Class for programatically invoking Sykle
     """
-
     def __init__(self, config, debug=False):
         self.config = config
         self.debug = debug
@@ -60,7 +60,7 @@ class Sykle():
 
         call_docker_compose(
             input,
-            project_name=self.config.project_name,
+            project_name=self.config.get_project_name(docker_type),
             debug=self.debug, **extras
         )
 
