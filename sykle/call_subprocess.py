@@ -7,6 +7,15 @@ class CancelException(Exception):
     pass
 
 
+class NonZeroReturnCodeException(Exception):
+    def __init__(self, process):
+        self.process = process
+        self.message = 'Process returned a non zero returncode'
+
+    def __str__(self):
+        return self.message
+
+
 def call_subprocess(command, env=None, debug=False, target=None):
     """
     This is a utility function that will spawn a subprocess that runs the
@@ -50,7 +59,8 @@ def call_subprocess(command, env=None, debug=False, target=None):
         else:
             p = subprocess.Popen(full_command, shell=True)
         p.wait()
-        return p
+        if p.returncode != 0:
+            raise NonZeroReturnCodeException(process=p)
     except KeyboardInterrupt:
         p.wait()
         raise CancelException()
