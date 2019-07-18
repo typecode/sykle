@@ -2,7 +2,7 @@ from .call_subprocess import call_subprocess
 
 
 class Sykle():
-    version = '0.5.0'
+    version = '0.5.1'
     """
     Class for programatically invoking Sykle
     """
