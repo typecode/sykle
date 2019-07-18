@@ -155,6 +155,8 @@ class ConfigV2(Config):
 {
     // specifies which version of .sykle.json is being used
     "version": 2,
+    // name of the project
+    "project_name": "tc-project",
     // docker compose service to use for commands by default
     "default_service": "django",
     // list of commands needed to run unittests (run sequentially)
@@ -297,6 +299,7 @@ class ConfigV2(Config):
             with open(ConfigV2.FILENAME, 'w+') as file:
                 json.dump(collections.OrderedDict([
                     ("version", 2),
+                    ("project_name", None),
                     ("default_service", None),
                     ("unittest", [{"service": None, "command": None}]),
                     ("e2e", [{"service": None, "command": None}]),
@@ -326,9 +329,11 @@ class ConfigV2(Config):
                     .format(ConfigV2.FILENAME)
                 )
 
-    @property
-    def project_name(self):
-        return os.path.basename(os.getcwd())
+    def get_project_name(self, docker_type='dev'):
+        if docker_type in ['dev', 'test']:
+            return os.path.basename(os.getcwd())
+        else:
+            return self.raw.get('project_name', 'tc-project')
 
     @property
     def default_service(self):
