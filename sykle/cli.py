@@ -58,8 +58,8 @@ Description:
 from . import __version__
 from .plugin_utils import Plugins
 from .config import Config
-from .sykle import Sykle
-from .call_subprocess import call_subprocess, CancelException
+from .sykle import Sykle, CommandException
+from .call_subprocess import call_subprocess, CancelException, NonZeroReturnCodeException
 from docopt import docopt
 import os
 import sys
@@ -227,5 +227,9 @@ def main():
         process_args(args)
     except CancelException:
         print(CRED + '\nCancelled' + CEND)
+    except CommandException as e:
+        print(CRED + '\n{}'.format(e) + CEND)
     except Config.ConfigException as e:
-        print(CRED + str(e) + CEND)
+        print(CRED + '\n{}'.format(e) + CEND)
+    except NonZeroReturnCodeException as e:
+        print(CRED + '\n{}'.format(e) + CEND)

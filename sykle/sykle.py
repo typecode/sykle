@@ -1,4 +1,8 @@
-from .call_subprocess import call_subprocess
+from .call_subprocess import call_subprocess, NonZeroReturnCodeException
+
+
+class CommandException(Exception):
+    pass
 
 
 class Sykle():
@@ -12,28 +16,35 @@ class Sykle():
 
     def _run_commands(self, commands, exec=False, **kwargs):
         for command in commands:
-            if command.service:
-                if exec:
-                    self.dc_exec(
-                        input=command.input,
-                        service=command.service,
-                        **kwargs
-                    )
+            try:
+                if command.service:
+                    if exec:
+                        self.dc_exec(
+                            input=command.input,
+                            service=command.service,
+                            **kwargs
+                        )
+                    else:
+                        self.dc_run(
+                            input=command.input,
+                            service=command.service,
+                            **kwargs
+                        )
                 else:
-                    self.dc_run(
-                        input=command.input,
-                        service=command.service,
-                        **kwargs
-                    )
-            else:
-                self.call_subprocess(command.input)
+                    self.call_subprocess(command.input)
+            except NonZeroReturnCodeException:
+                raise CommandException("Command {} failed".format(command))
 
     def _run_tests(self, commands, input=[], service=None, fast=False):
         if not fast:
             self.build(docker_type='test')
 
         commands = commands.for_service(service) if service else commands
+
         self._run_commands(commands, docker_type='test', exec=fast)
+
+        if not fast:
+            self.down(docker_type='test')
 
     def call_subprocess(self, *args, **kwargs):
         call_subprocess(*args, **kwargs, debug=self.debug)
@@ -84,11 +95,6 @@ class Sykle():
                 docker_type='prod-build',
                 deployment=deployment
             )
-            self.dc(
-                input=['build'],
-                docker_type='prod-build',
-                deployment=deployment
-            )
         else:
             self.dc(input=['build'], docker_type=docker_type)
 
@@ -134,16 +140,16 @@ class Sykle():
         command = ['scp', '-o', 'StrictHostKeyChecking=no']
         command += input
         command += [deploy_config.target + ":{}".format(dest)]
-        return self.call_subprocess(command)
+        self.call_subprocess(command)
 
     def ssh_exec(self, input, deployment):
         deploy_config = self.config.for_deployment(deployment)
-        return self.call_subprocess(input, target=deploy_config.target)
+        self.call_subprocess(input, target=deploy_config.target)
 
     def ssh(self, deployment):
         """Opens an ssh connection to the deployment"""
         deploy_config = self.config.for_deployment(deployment)
-        return self.call_subprocess(['ssh', deploy_config.target])
+        self.call_subprocess(['ssh', deploy_config.target])
 
     def deploy(self, deployment):
         """Deploys docker images/static assets and starts services"""

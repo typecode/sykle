@@ -25,6 +25,12 @@ class Command:
         self.service = service
         self.input = input.split(' ') if type(input) == str else input
 
+    def __str__(self):
+        return "(Service: \"{}\", Input: \"{}\")".format(
+            self.service,
+            ' '.join(self.input)
+        )
+
 
 class DeploymentConfig:
     @staticmethod
