@@ -161,13 +161,14 @@ def process_args(args):
         service = args['--service'] or config.default_service
         deployment = args['--deployment']
         sykle.dc_run(
-            input=args['INPUT'], docker_type=docker_type, service=service,
-            deployment=deployment
+            input=args['INPUT'], docker_type=docker_type,
+            service=service, deployment=deployment
         )
     elif args['dc_exec']:
         service = args['--service'] or config.default_service
         sykle.dc_exec(
-            input=args['INPUT'], docker_type=docker_type, service=service
+            input=args['INPUT'], docker_type=docker_type,
+            service=service
         )
     elif args['build']:
         deployment = args['--deployment'] or config.default_deployment
@@ -199,7 +200,10 @@ def process_args(args):
         )
     elif args['ssh_exec']:
         deployment = args['--deployment'] or config.default_deployment
-        sykle.ssh_exec(input=args['INPUT'], deployment=deployment)
+        sykle.ssh_exec(
+            input=args['INPUT'],
+            deployment=deployment
+        )
     elif args['ssh']:
         deployment = args['--deployment'] or config.default_deployment
         sykle.ssh(deployment=deployment)

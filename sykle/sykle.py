@@ -1,4 +1,5 @@
 from .call_subprocess import call_subprocess, NonZeroReturnCodeException
+from .call_docker_compose import call_docker_compose
 
 
 class CommandException(Exception):
@@ -14,20 +15,27 @@ class Sykle():
         self.config = config
         self.debug = debug
 
-    def _run_commands(self, commands, exec=False, **kwargs):
+    def _run_commands(self, commands, exec=False, input=[], **kwargs):
         for command in commands:
+            command.input += input
             try:
                 if command.service:
                     if exec:
                         self.dc_exec(
                             input=command.input,
                             service=command.service,
+                            docker_type=(
+                                kwargs.pop('docker_type', command.docker_type)
+                            ),
                             **kwargs
                         )
                     else:
                         self.dc_run(
                             input=command.input,
                             service=command.service,
+                            docker_type=(
+                                kwargs.pop('docker_type', command.docker_type)
+                            ),
                             **kwargs
                         )
                 else:
@@ -41,17 +49,21 @@ class Sykle():
 
         commands = commands.for_service(service) if service else commands
 
-        self._run_commands(commands, docker_type='test', exec=fast)
+        self._run_commands(
+            commands, docker_type='test', exec=fast, input=input
+        )
 
         if not fast:
             self.down(docker_type='test')
 
+    def call_docker_compose(self, *args, **kwargs):
+        return call_docker_compose(*args, **kwargs)
+
     def call_subprocess(self, *args, **kwargs):
-        call_subprocess(*args, **kwargs, debug=self.debug)
+        return call_subprocess(*args, **kwargs, debug=self.debug)
 
     def dc(self, input, docker_type='dev', deployment=None):
         """Runs a command with the correct docker compose file(s)"""
-        from .call_docker_compose import call_docker_compose
 
         extras = {'type': docker_type}
 
@@ -69,9 +81,9 @@ class Sykle():
             else:
                 extras['env_file'] = deploy_config.env_file
 
-        call_docker_compose(
+        self.call_docker_compose(
             input,
-            project_name=self.config.get_project_name(docker_type),
+            project_name=self.config.get_project_name(docker_type=docker_type),
             debug=self.debug, **extras
         )
 
@@ -100,6 +112,8 @@ class Sykle():
 
     def up(self, input=[], **kwargs):
         """Starts up relevant docker compose services"""
+        if kwargs.get('deployment'):
+            kwargs['docker_type'] = 'prod'
         self.preup(**kwargs)
         self.dc(
             input=['up', '--build', '--force-recreate'] + input,
@@ -127,10 +141,11 @@ class Sykle():
             deployment=deployment
         )
 
-    def pull(self, deployment):
-        """Pushes docker images"""
+    def pull(self, deployment=None):
+        """Pulls docker images for a deployment (labels as prod images)"""
         self.dc(
             input=['pull'],
+            docker_type='prod',
             deployment=deployment
         )
 
@@ -167,7 +182,7 @@ class Sykle():
             deployment=deployment
         )
 
-        self.dc(input=['pull'], deployment=deployment)
+        self.pull(deployment=deployment)
         self.up(input=['-d'], deployment=deployment)
 
         # cleans up docker system
@@ -186,8 +201,8 @@ class Sykle():
             docker_type='prod-build', deployment=deployment
         )
 
-    def run_alias(self, alias, input=[], docker_type='dev', deployment=None):
+    def run_alias(self, alias, input=[], deployment=None):
         self._run_commands(
             [self.config.get_alias_command(alias, input=input)],
-            docker_type=docker_type, deployment=deployment, exec=False
+            deployment=deployment, exec=False
         )
