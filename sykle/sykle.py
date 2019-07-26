@@ -16,6 +16,9 @@ class Sykle():
         self.debug = debug
 
     def _run_commands(self, commands, exec=False, input=[], **kwargs):
+        modified_kwargs = {**kwargs}
+        docker_type = modified_kwargs.pop('docker_type', None)
+
         for command in commands:
             command.input += input
             try:
@@ -24,19 +27,15 @@ class Sykle():
                         self.dc_exec(
                             input=command.input,
                             service=command.service,
-                            docker_type=(
-                                kwargs.pop('docker_type', command.docker_type)
-                            ),
-                            **kwargs
+                            docker_type=docker_type or command.docker_type,
+                            **modified_kwargs
                         )
                     else:
                         self.dc_run(
                             input=command.input,
                             service=command.service,
-                            docker_type=(
-                                kwargs.pop('docker_type', command.docker_type)
-                            ),
-                            **kwargs
+                            docker_type=docker_type or command.docker_type,
+                            **modified_kwargs
                         )
                 else:
                     self.call_subprocess(command.input)
@@ -81,9 +80,10 @@ class Sykle():
             else:
                 extras['env_file'] = deploy_config.env_file
 
+        project_name = self.config.get_project_name(docker_type=docker_type)
         self.call_docker_compose(
             input,
-            project_name=self.config.get_project_name(docker_type=docker_type),
+            project_name=project_name,
             debug=self.debug, **extras
         )
 

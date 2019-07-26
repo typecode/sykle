@@ -59,7 +59,8 @@ class SykleTestCase(unittest.TestCase):
         sykle.call_docker_compose = MagicMock()
 
         sykle.deploy('staging')
-        sykle.call_docker_compose.assert_has_calls([
+        self.assertEqual(
+            sykle.call_docker_compose.mock_calls[0],
             unittest.mock.call(
                 ['run', '--rm', 'static', 'npm', 'run-script', 'build'],
                 project_name='sharp-ecommerce',
@@ -67,18 +68,24 @@ class SykleTestCase(unittest.TestCase):
                 docker_vars={'BUILD_NUMBER': 'latest'},
                 env_file='./.env.staging',
                 type='prod-build'
-            ),
+            )
+        )
+        self.assertEqual(
+            sykle.call_docker_compose.mock_calls[1],
             unittest.mock.call(
                 [
                     'run', '--rm', 'backend', 'django-admin',
                     'collectstatic', '--no-input'
                 ],
+                project_name='sharp-ecommerce',
                 debug=False,
                 docker_vars={'BUILD_NUMBER': 'latest'},
-                project_name='sykle',
-                target='fake-target',
-                type='prod'
-            ),
+                env_file='./.env.staging',
+                type='prod-build'
+            )
+        )
+        self.assertEqual(
+            sykle.call_docker_compose.mock_calls[2],
             unittest.mock.call(
                 ['push'],
                 debug=False,
@@ -86,7 +93,10 @@ class SykleTestCase(unittest.TestCase):
                 env_file='./.env.staging',
                 project_name='sharp-ecommerce',
                 type='prod-build'
-            ),
+            )
+        )
+        self.assertEqual(
+            sykle.call_docker_compose.mock_calls[3],
             unittest.mock.call(
                 ['pull'],
                 debug=False,
@@ -94,7 +104,10 @@ class SykleTestCase(unittest.TestCase):
                 project_name='sharp-ecommerce',
                 target='fake-target',
                 type='prod'
-            ),
+            )
+        )
+        self.assertEqual(
+            sykle.call_docker_compose.mock_calls[4],
             unittest.mock.call(
                 ['up', '--build', '--force-recreate', '-d'],
                 debug=False,
@@ -103,4 +116,4 @@ class SykleTestCase(unittest.TestCase):
                 target='fake-target',
                 type='prod'
             )
-        ])
+        )
