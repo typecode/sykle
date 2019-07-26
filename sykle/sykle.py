@@ -7,7 +7,7 @@ class CommandException(Exception):
 
 
 class Sykle():
-    version = '0.5.3'
+    version = '0.5.4'
     """
     Class for programatically invoking Sykle
     """
