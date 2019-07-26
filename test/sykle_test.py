@@ -25,3 +25,82 @@ class SykleTestCase(unittest.TestCase):
         sykle.dc.assert_called_with(
             input=['run', '--rm', 'app', 'some', 'command'],
         )
+
+    def test_deploy(self):
+        config = ConfigV2({
+          "project_name": "sharp-ecommerce",
+          "default_service": "backend",
+          "unittest": [],
+          "e2e": [],
+          "predeploy": [
+            {
+              "service": "static",
+              "command": "npm run-script build"
+            },
+            {
+              "service": "backend",
+              "command": "django-admin collectstatic --no-input"
+            }
+          ],
+          "default_deployment": "staging",
+          "deployments": {
+            "staging": {
+              "target": "fake-target",
+              "env_file": "./.env.staging",
+              "docker_vars": {
+                "BUILD_NUMBER": "latest"
+              }
+            }
+          }
+        })
+
+        sykle = Sykle(config=config)
+        sykle.call_subprocess = MagicMock()
+        sykle.call_docker_compose = MagicMock()
+
+        sykle.deploy('staging')
+        sykle.call_docker_compose.assert_has_calls([
+            unittest.mock.call(
+                ['run', '--rm', 'static', 'npm', 'run-script', 'build'],
+                project_name='sharp-ecommerce',
+                debug=False,
+                docker_vars={'BUILD_NUMBER': 'latest'},
+                env_file='./.env.staging',
+                type='prod-build'
+            ),
+            unittest.mock.call(
+                [
+                    'run', '--rm', 'backend', 'django-admin',
+                    'collectstatic', '--no-input'
+                ],
+                debug=False,
+                docker_vars={'BUILD_NUMBER': 'latest'},
+                project_name='sykle',
+                target='fake-target',
+                type='prod'
+            ),
+            unittest.mock.call(
+                ['push'],
+                debug=False,
+                docker_vars={'BUILD_NUMBER': 'latest'},
+                env_file='./.env.staging',
+                project_name='sharp-ecommerce',
+                type='prod-build'
+            ),
+            unittest.mock.call(
+                ['pull'],
+                debug=False,
+                docker_vars={'BUILD_NUMBER': 'latest'},
+                project_name='sharp-ecommerce',
+                target='fake-target',
+                type='prod'
+            ),
+            unittest.mock.call(
+                ['up', '--build', '--force-recreate', '-d'],
+                debug=False,
+                docker_vars={'BUILD_NUMBER': 'latest'},
+                project_name='sharp-ecommerce',
+                target='fake-target',
+                type='prod'
+            )
+        ])

@@ -19,16 +19,19 @@ class Command:
         return Command(
             input=obj.get('command'),
             service=obj.get('service'),
+            docker_type=obj.get('env', 'dev')
         )
 
-    def __init__(self, input, service=None):
+    def __init__(self, input, service=None, docker_type='dev'):
         self.service = service
         self.input = input.split(' ') if type(input) == str else input
+        self.docker_type = docker_type
 
     def __str__(self):
-        return "(Service: \"{}\", Input: \"{}\")".format(
+        return "(Service: \"{}\", Input: \"{}\", Env: \"{}\")".format(
             self.service,
-            ' '.join(self.input)
+            ' '.join(self.input),
+            self.docker_type
         )
 
 
