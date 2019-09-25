@@ -61,8 +61,12 @@ class Sykle():
     def call_subprocess(self, *args, **kwargs):
         return call_subprocess(*args, **kwargs, debug=self.debug)
 
-    def dc(self, input, docker_type='dev', deployment=None):
-        """Runs a command with the correct docker compose file(s)"""
+    def dc(self, input, docker_type='dev', deployment=None, local_test=False):
+        """
+        Runs a command with the correct docker compose file(s)
+
+        - local_test: if this is true, will ignore any deployment targets
+        """
 
         extras = {'type': docker_type}
 
@@ -76,7 +80,10 @@ class Sykle():
 
             if docker_type != 'prod-build':
                 extras['type'] = 'prod'
-                extras['target'] = deploy_config.target
+                if not local_test:
+                    extras['target'] = deploy_config.target
+                else:
+                    extras['env_file'] = deploy_config.env_file
             else:
                 extras['env_file'] = deploy_config.env_file
 
@@ -98,17 +105,21 @@ class Sykle():
         """Runs a command on a running service container"""
         self.dc(input=['exec', service] + input, **kwargs)
 
-    def build(self, docker_type='dev', deployment=None):
+    def build(self, input=[], docker_type='dev', **kwargs):
         """Builds docker images based on compose files"""
 
         if docker_type == 'prod':
             self.dc(
-                input=['build'],
+                input=['build'] + input,
                 docker_type='prod-build',
-                deployment=deployment
+                **kwargs
             )
         else:
-            self.dc(input=['build'], docker_type=docker_type)
+            # NB: all images that get deployed, or that we want to use to test
+            #     deployments locally, should be prod. That means all dev
+            #     and test images should forcefully ignore the deployment arg
+            kwargs.pop('deployment')
+            self.dc(input=['build'] + input, docker_type=docker_type, **kwargs)
 
     def up(self, input=[], **kwargs):
         """Starts up relevant docker compose services"""

@@ -3,12 +3,12 @@
 # flake8: noqa
 """Sykle CLI
 Usage:
-  syk [--debug] [--config=<file>] [--test | --prod | --prod-build] dc [INPUT ...]
-  syk [--debug] [--config=<file>] [--test | --prod | --prod-build] [--service=<service>] [--env=<env_file>] [--deployment=<name>] dc_run [INPUT ...]
+  syk [--debug] [--config=<file>] [--test | --prod | --prod-build] [--local-test] dc [INPUT ...]
+  syk [--debug] [--config=<file>] [--test | --prod | --prod-build] [--service=<service>] [--env=<env_file>] [--deployment=<name>] [--local-test] dc_run [INPUT ...]
   syk [--debug] [--config=<file>] [--test | --prod] [--service=<service>] dc_exec [INPUT ...]
-  syk [--debug] [--config=<file>] [--test | --prod] [--deployment=<name>] build
-  syk [--debug] [--config=<file>] [--test | --prod] [--deployment=<name>] up
-  syk [--debug] [--config=<file>] [--test | --prod] [--deployment=<name>] down
+  syk [--debug] [--config=<file>] [--test | --prod] [--deployment=<name>] [--local-test] build [INPUT ...]
+  syk [--debug] [--config=<file>] [--test | --prod] [--deployment=<name>] [--local-test] up [INPUT ...]
+  syk [--debug] [--config=<file>] [--test | --prod] [--deployment=<name>] [--local-test] down
   syk [--debug] [--config=<file>] [--service=<service>] [--fast] unittest [INPUT ...]
   syk [--debug] [--config=<file>] [--service=<service>] [--fast] e2e [INPUT ...]
   syk [--debug] [--config=<file>] [--deployment=<name>] push
@@ -35,6 +35,10 @@ Option
   --deployment=<name>     Uses config for the given deployment
   --fast                  Runs tests without building images/containers
                           (you will need to have 'syk --test up' running)
+  --local-test            Use this in conjunction with the deployment argument
+                          if you want to use all the settings for a specific
+                          deployment, but have the command run locally rather
+                          than on that deployment
 
 Description:
   dc              Runs docker-compose command
@@ -154,15 +158,19 @@ def process_args(args):
     # --- Run commands that require sykle instance ---
 
     if args['dc']:
+        local_test = args['--local-test']
         sykle.dc(
-            input=args['INPUT'], docker_type=docker_type
+            input=args['INPUT'], docker_type=docker_type,
+            local_test=local_test
         )
     elif args['dc_run']:
+        local_test = args['--local-test']
         service = args['--service'] or config.default_service
         deployment = args['--deployment']
         sykle.dc_run(
             input=args['INPUT'], docker_type=docker_type,
-            service=service, deployment=deployment
+            service=service, deployment=deployment,
+            local_test=local_test
         )
     elif args['dc_exec']:
         service = args['--service'] or config.default_service
@@ -171,14 +179,30 @@ def process_args(args):
             service=service
         )
     elif args['build']:
-        deployment = args['--deployment'] or config.default_deployment
-        sykle.build(docker_type=docker_type, deployment=deployment)
+        local_test = args['--local-test']
+        deployment = args['--deployment']
+        if deployment:
+            # NB: all images that get deployed, or that we want to use to test
+            #     deployments locally, should be prod.
+            docker_type = 'prod'
+        sykle.build(
+            docker_type=docker_type, deployment=deployment,
+            local_test=local_test, input=args['INPUT']
+        )
     elif args['up']:
+        local_test = args['--local-test']
         deployment = args['--deployment']
-        sykle.up(docker_type=docker_type, deployment=deployment)
+        sykle.up(
+            docker_type=docker_type, deployment=deployment,
+            input=args['INPUT'], local_test=local_test
+        )
     elif args['down']:
+        local_test = args['--local-test']
         deployment = args['--deployment']
-        sykle.down(docker_type=docker_type, deployment=deployment)
+        sykle.down(
+            docker_type=docker_type, deployment=deployment,
+            local_test=local_test
+        )
     elif args['unittest']:
         sykle.unittest(
             input=args['INPUT'], service=args['--service'],
