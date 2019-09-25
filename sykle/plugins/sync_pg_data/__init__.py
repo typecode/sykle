@@ -28,13 +28,15 @@ Example .sykle.json:
                                          // afterwards. (OPTIONAL)
             "locations": {
                 "local": {                   // Name of location
-                    "env_file": ".env",      // Envfile for args to use (OPTIONAL)
+                    "env_file": ".env",      // Envfile for args (OPTIONAL)
                     "write": true,           // Allow writes to location
                     "args": {
                        "PORT": 5432,         // Port for postgres (OPTIONAL)
                        "HOST": "$PG_HOST",   // Host for postgres
                        "USER": "postgres",   // Username for postgres
-                       "PASSWORD": "asdf"    // Password for postgres
+                       "PASSWORD": "asdf",   // Password for postgres
+                       "VERSION": "10.5",    // Postgres version (assumes 10.5)
+                       "NETWORK": "test"     // Host docker network (OPTIONAL)
                     }
                 }
             }
@@ -99,15 +101,20 @@ class Plugin(IPlugin):
 
         args = self._get_location_args(location)
         print('Dumping "{}" to "{}"...'.format(location, dump_file))
+        dump_dir = os.path.dirname(dump_file)
         call_subprocess(
             command=[
+                'docker', 'run', '-v',
+                "{}:/{}".format(os.path.abspath(dump_dir), dump_dir),
+                '-e', "PGPASSWORD={}".format(args['PASSWORD']),
+                "--network={}".format(args.get('NETWORK', 'default')),
+                "postgres:{}".format(args.get('VERSION', 10.5)),
                 'pg_dump', '-h', args['HOST'],
                 '-v', '-U', args['USER'], args['NAME'],
                 '-p', str(args.get('PORT', 5432)),
                 '-f', dump_file,
                 '--format', 'tar'
             ],
-            env={'PGPASSWORD': str(args['PASSWORD'])},
             debug=debug
         )
         print('Dumped "{}" to "{}".'.format(location, dump_file))
@@ -119,16 +126,22 @@ class Plugin(IPlugin):
         # Double check to ensure we aren't overwriting prod
         self.check_write_permissions(location)
         args = self._get_location_args(location)
+
         print('Restoring "{}" to "{}"...'.format(restore_file, location))
+        restore_dir = os.path.dirname(restore_file)
         call_subprocess(
             command=[
+                'docker', 'run', '-v',
+                "{}:/{}".format(os.path.abspath(restore_dir), restore_dir),
+                '-e', "PGPASSWORD={}".format(args['PASSWORD']),
+                "--network={}".format(args.get('NETWORK', 'default')),
+                "postgres:{}".format(args.get('VERSION', 10.5)),
                 'pg_restore', '--verbose', '--host', args['HOST'],
                 '--username', args['USER'],
                 '--port', str(args.get('PORT', 5432)),
                 '--dbname', args['NAME'],
                 restore_file
             ],
-            env={'PGPASSWORD': str(args['PASSWORD'])},
             debug=debug
         )
         print('Restored "{}" to "{}".'.format(restore_file, location))
@@ -144,18 +157,25 @@ class Plugin(IPlugin):
         print('Droping "{}"...'.format(location))
         call_subprocess(
             command=[
+                'docker', 'run',
+                '-e', "PGPASSWORD={}".format(args['PASSWORD']),
+                "--network={}".format(args.get('NETWORK', 'default')),
+                "postgres:{}".format(args.get('VERSION', 10.5)),
                 'dropdb', '--host', args['HOST'],
                 '--username', args['USER'],
                 '--port', str(args.get('PORT', 5432)),
                 args['NAME']
             ],
-            env={'PGPASSWORD': str(args['PASSWORD'])},
             debug=debug
         )
         print('Dropped "{}".'.format(location))
         print('Creating "{}"...'.format(location))
         call_subprocess(
             command=[
+                'docker', 'run',
+                '-e', "PGPASSWORD={}".format(args['PASSWORD']),
+                "--network={}".format(args.get('NETWORK', 'default')),
+                "postgres:{}".format(args.get('VERSION', 10.5)),
                 'createdb', '--host', args['HOST'],
                 '--username', args['USER'],
                 '--port', str(args.get('PORT', 5432)),
