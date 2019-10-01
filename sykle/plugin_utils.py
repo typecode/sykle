@@ -1,7 +1,35 @@
 import pkgutil
+import sys
 import sykle.plugins
 import os
 from distutils.version import LooseVersion
+
+from .call_subprocess import call_subprocess
+
+
+class PluginDir:
+    def __init__(self, name, file_finder):
+        self.name = name
+        self.file_finder = file_finder
+
+    @property
+    def module(self):
+        return self.file_finder.find_loader(self.name)[0]
+
+    @property
+    def path(self):
+        return os.path.join(self.file_finder.path, self.name)
+
+    @property
+    def requirements_file(self):
+        return os.path.join(self.path, 'requirements.txt')
+
+    def install_requirements(self):
+        if os.path.isfile(self.requirements_file):
+            call_subprocess([
+                sys.executable, '-m', 'pip', 'install',
+                '-r', self.requirements_file
+            ])
 
 
 class Plugins():
@@ -11,12 +39,12 @@ class Plugins():
         self.plugins = Plugins.get_module_loaders()
 
     @staticmethod
-    def load(name):
-        return Plugins.get_module_loaders().get(name).load_module()
+    def list():
+        return Plugins.get_module_loaders()
 
     @staticmethod
-    def list():
-        return Plugins.get_module_loaders().keys()
+    def exists(name):
+        return name in Plugins.get_module_loaders().keys()
 
     @staticmethod
     def get_module_loaders():
@@ -24,7 +52,7 @@ class Plugins():
         plugin_path = sykle.plugins.__path__
 
         for file_finder, name, _ in pkgutil.iter_modules(plugin_path):
-            plugins[name] = file_finder.find_loader(name)[0]
+            plugins[name] = PluginDir(name, file_finder)
 
         plugins_path = os.path.join(os.getcwd(), '.syk-plugins')
         if os.path.isdir(plugins_path):
@@ -34,25 +62,26 @@ class Plugins():
                         'WARNING: local "{}" plugin overwrites global plugin'
                         .format(name)
                     )
-                plugins[name] = file_finder.find_loader(name)[0]
+                plugins[name] = PluginDir(name, file_finder)
         return plugins
 
-    @staticmethod
-    def exists(name):
-        return name in Plugins.get_module_loaders()
-
     def run(self, name):
-        self.load(name).Plugin(config=self.config, sykle=self.sykle).run()
+        plugin_dir = self.plugins.get(name)
+        plugin_module = plugin_dir.module.load_module()
+        plugin = plugin_module.Plugin(
+            config=self.config, sykle=self.sykle, dir=plugin_dir)
+        plugin.run()
 
 
 class IPlugin():
-    def __init__(self, config, sykle):
+    def __init__(self, config, sykle, dir):
         if not self.NAME:
-            raise Exception('Must give plugin a name! (via name attribute)')
+            raise Exception('Must give a plugin a NAME attribute!')
 
         self.sykle = sykle
         self.syk_config = config
         self.config = config.for_plugin(self.NAME)
+        self._dir = dir
         self._check_compatibility()
 
     def _check_compatibility(self):
@@ -66,6 +95,10 @@ class IPlugin():
                 'Plugin requires sykle {} (using version {})'
                 .format(required_version, current_version)
             )
+
+    @property
+    def dir(self):
+        return self._dir
 
     def run(self):
         raise NotImplementedError("Plugin needs a run method!")

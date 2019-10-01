@@ -127,10 +127,16 @@ def process_args(args):
         Config.init(enable_print=True)
         return
     elif args['plugins']:
-        print('Installed syk plugins:')
-        for plugin in Plugins.list():
-            print('  {}'.format(plugin))
-        return
+        if args['install']:
+            logger.info('Installing plugins:')
+            for plugin_name, plugin_dir in plugins.items():
+                logger.info('  {}'.format(plugin_name))
+                plugin_dir.install_requirements()
+            return
+        logger.info('Available plugins:')
+        plugins = Plugins.list()
+        for plugin_name in plugins.keys():
+            logger.info('  {}'.format(plugin_name))
     elif args['config']:
         Config.print_example()
         return
