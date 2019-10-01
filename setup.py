@@ -21,7 +21,9 @@ setup(
     ],
     install_requires=[
         'docopt>=0.6.2,<0.7',
-        'python-dotenv>=0.9.1,<0.10'
+        'halo==0.0.28',
+        'python-dotenv>=0.9.1,<0.10',
+        'termcolor==1.1.0'
     ],
     test_suite='nose.collector',
     packages=find_packages(
