@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # flake8: noqa
 """Sykle CLI
@@ -18,6 +18,7 @@ Usage:
   syk [--debug] [--config=<file>] [--env=<env_file>] [--deployment=<name>] deploy
   syk init
   syk plugins
+  syk plugins install
   syk config
   syk [--debug] [--config=<file>] [--deployment=<name>] [INPUT ...]
 
@@ -56,43 +57,39 @@ Description:
   deploy          Deploys and starts latest builds on ssh target
   init            Creates a blank config file
   plugins         Lists available plugins
+  plugins install Installs plugin requirements
   config          Print an example config
 """
 
 from . import __version__
+
+import os
+import sys
+import time
+import logging
+
+from docopt import docopt
+
 from .plugin_utils import Plugins
 from .config import Config
 from .sykle import Sykle, CommandException
 from .call_subprocess import call_subprocess, CancelException, NonZeroReturnCodeException
-from docopt import docopt
-import os
-import sys
-import time
 
-CEND = '\33[0m'
-CYELLOW = '\33[33m'
-CRED = '\33[31m'
+
+logger = logging.getLogger(__name__)
+
 
 def _load_config(args):
     config_name = args['--config'] or Config.FILENAME
     try:
         return Config.from_file(config_name)
     except Config.ConfigFileNotFoundException:
-        print(
-            CRED +
-            "Config file '{}' does not exist!\n".format(config_name) +
-            "You can create an empty config by running: \n" +
-            "    syk init" +
-            CEND
-        )
-        return
+        message = """Config file %s does not exist!
+            You can create an empty config by running:
+            \tsyk init""" % config_name
+        logger.critical(message)
     except Config.ConfigFileDecodeException as e:
-        print(
-            CRED +
-            'Config Decode Error: {}'.format(e) +
-            CEND
-        )
-        return
+        logger.critical('Config Decode Error: %s' % e)
 
 
 def _get_docker_type(args):
@@ -106,21 +103,19 @@ def _get_docker_type(args):
 
 
 def use_run_file():
-    print(CYELLOW)
-    print('========================UPGRADE===========================')
-    print('                 Legacy run.sh detected!                  ')
-    print('  Will try to run commands through ./run.sh until removed ')
-    print('==========================================================')
-    print(CEND)
+    logger.warn(
+        """========================UPGRADE===========================
+                         Legacy run.sh detected!                  
+          Will try to run commands through ./run.sh until removed 
+        =========================================================="""
+    )
     time.sleep(1)
 
-    print('Trying to run command with run.sh...')
+    logger.warn('Trying to run command with run.sh...')
     # NB: always run debug when trying to use legacy ./run.sh file
     p = call_subprocess(['./run.sh'] + sys.argv[1:], debug=True)
     if p.returncode == 1:
-        print(CRED)
-        print('command failed through run.sh. Trying to run normally...')
-        print(CEND)
+        logger.info('command failed through run.sh. Trying to run normally...')
     else:
         return
 
@@ -136,10 +131,16 @@ def process_args(args):
         Config.init(enable_print=True)
         return
     elif args['plugins']:
-        print('Installed syk plugins:')
-        for plugin in Plugins.list():
-            print('  {}'.format(plugin))
-        return
+        if args['install']:
+            logger.info('Installing plugins:')
+            for plugin_name, plugin_dir in plugins.items():
+                logger.info('  {}'.format(plugin_name))
+                plugin_dir.install_requirements()
+            return
+        logger.info('Available plugins:')
+        plugins = Plugins.list()
+        for plugin_name in plugins.keys():
+            logger.info('  {}'.format(plugin_name))
     elif args['config']:
         Config.print_example()
         return
@@ -245,7 +246,7 @@ def process_args(args):
         elif plugins.exists(cmd):
             plugins.run(cmd)
         else:
-            print('Unknown alias/plugin "{}"'.format(cmd))
+            logger.critical('Unknown alias/plugin "{}"'.format(cmd))
             print(__doc__)
 
 def main():
@@ -254,10 +255,10 @@ def main():
     try:
         process_args(args)
     except CancelException:
-        print(CRED + '\nCancelled' + CEND)
+        logger.critical('Canceled')
     except CommandException as e:
-        print(CRED + '\n{}'.format(e) + CEND)
+        logger.critical(e)
     except Config.ConfigException as e:
-        print(CRED + '\n{}'.format(e) + CEND)
+        logger.critical(e)
     except NonZeroReturnCodeException as e:
-        print(CRED + '\n{}'.format(e) + CEND)
+        logger.critical(e)

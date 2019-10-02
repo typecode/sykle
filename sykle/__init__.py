@@ -1,5 +1,9 @@
+import logging
+from .logger import FancyLogger
 from .sykle import Sykle
+
 
 __version__ = Sykle.version
 
-Sykle
+logging.setLoggerClass(FancyLogger)
+logging.basicConfig(level=logging.INFO)
