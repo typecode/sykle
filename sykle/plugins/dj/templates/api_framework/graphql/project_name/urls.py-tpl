@@ -1,0 +1,10 @@
+{% block urls_imports %}
+{{ super() }}
+from graphene_django.views import GraphQLView
+from {{ project_name }}.api.schema import schema
+{% endblock %}
+
+{% block url_patterns %}
+{{ super() }}
+    url(r'^graphql/', GraphQLView.as_view(schema=schema), name="api"),
+{% endblock %}

@@ -1,0 +1,18 @@
+import graphene
+
+
+class Query(
+    graphene.ObjectType
+    # All app queries go here...
+):
+    node = graphene.Node.Field()
+
+
+class Mutations(
+    graphene.ObjectType
+    # All app mutations go here...
+):
+    pass
+
+
+schema = graphene.Schema(Query, Mutations)

@@ -1,0 +1,23 @@
+{% block production_imports %}
+{{ super() }}
+from boto3.session import Session
+{% endblock %}
+{% block etc %}
+{{ super() }}
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+AWS_DEFAULT_ACL = 'public-read'
+AWS_QUERYSTRING_AUTH = False
+AWS_S3_CUSTOM_DOMAIN = 's3.amazonaws.com/%s' % AWS_STORAGE_BUCKET_NAME
+
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+AWS_DEFAULT_ACL = 'public-read'
+
+boto3_session = Session(
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_REGION_NAME
+)
+
+DEFAULT_FILE_STORAGE = '{{ project_name }}.storage_backends.MediaStorage'
+STATICFILES_STORAGE = '{{ project_name }}.storage_backends.StaticStorage'
+{% endblock %}

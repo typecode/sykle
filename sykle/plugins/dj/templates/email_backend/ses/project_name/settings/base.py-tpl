@@ -1,0 +1,4 @@
+{% block third_party_apps %}
+{{ super() }}
+    'post_office',
+{% endblock %}

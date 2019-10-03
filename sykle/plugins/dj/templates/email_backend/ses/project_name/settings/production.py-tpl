@@ -1,0 +1,8 @@
+{% block etc %}
+{{ super() }}
+POST_OFFICE = {
+    'BACKENDS': {
+        'default': 'django_ses.SESBackend',
+    }
+}
+{% endblock %}

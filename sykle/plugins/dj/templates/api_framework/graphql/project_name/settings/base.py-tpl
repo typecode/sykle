@@ -1,0 +1,9 @@
+{% block third_party_apps %}
+{{ super() }}
+    'graphene_django',
+{% endblock %}
+
+GRAPHENE = {
+    "RELAY_CONNECTION_ENFORCE_FIRST_OR_LAST": True,
+    "RELAY_CONNECTION_MAX_LIMIT": 100,
+}
