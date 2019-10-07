@@ -1,7 +1,7 @@
-"""dj
+"""bootstrap
 
 Usage:
-  syk dj new-project <name> \
+  syk bootstrap django <name> \
     [--apps=<apps>] \
     [--api-framework=<api_framework>] \
     [--cms-framework=<cms_framework>] \
@@ -25,7 +25,7 @@ Options:
   -h --help                             Show this screen.
 
 Description:
-  new-project                           Create a django project.
+  django                                Create a django project.
 """
 
 __version__ = '0.1.0'
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin(IPlugin):
-    NAME = 'dj'
+    NAME = 'bootstrap'
 
     arg_extensions = [
         '--api-framework',
@@ -80,10 +80,10 @@ class Plugin(IPlugin):
             if k in Plugin.arg_extensions and v is not None
         ]
 
-    def new_project(self):
+    def new_django_project(self):
         self.renderer.render()
 
     @logger.halo(succeed=True)
     def run(self):
-        if self.args['new-project']:
-            self.new_project()
+        if self.args['django']:
+            self.new_django_project()
