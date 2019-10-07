@@ -1,0 +1,15 @@
+{% block third_party_apps %}
+{{ super() }}
+   'django_elasticsearch_dsl',
+{% endblock %}
+
+{% block etc %}
+{{ super() }}
+ELASTICSEARCH_DSL_AUTOSYNC = True
+ELASTICSEARCH_DSL_AUTO_REFRESH = True
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': os.environ.get('ELASTICSEARCH_URL', 'http://elasticsearch:9200/')
+    },
+}
+{% endblock %}

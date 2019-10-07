@@ -1,0 +1,40 @@
+{% block etc %}
+{{ super() }}
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+
+    'formatters': {
+        'console': {
+            'format': '[%(asctime)s][%(levelname)s] %(name)s '
+                      '%(filename)s:%(funcName)s:%(lineno)d | %(message)s',
+            'datefmt': '%H:%M:%S',
+        },
+    },
+
+    'handlers': {
+        'console': {
+            'level': LOG_LEVEL,
+            'class': 'logging.StreamHandler',
+            'formatter': 'console'
+        },
+        'sentry': {
+            'level': 'WARNING',
+            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+            'dsn': os.environ.get('RAVEN_DSN_SERVER', ''),
+        },
+    },
+
+    'loggers': {
+        'warning': {
+            'level': 'WARNING',
+            'handlers': ['console', 'sentry'],
+        },
+        'info': {
+            'level': 'INFO',
+            'handlers': ['console'],
+        }
+    },
+}
+{% endblock %}

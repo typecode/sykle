@@ -1,0 +1,4 @@
+{% block etc %}
+{{ super() }}
+CELERY_BROKER_URL = 'pyamqp://admin:password@message-broker:5672'
+{% endblock %}

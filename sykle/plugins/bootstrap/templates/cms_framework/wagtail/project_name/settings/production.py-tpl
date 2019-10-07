@@ -1,0 +1,9 @@
+{% block etc %}
+{{ super() }}
+FRONTEND_CACHE = {
+    'cloudfront': {
+        'BACKEND': 'wagtail.contrib.frontend_cache.CloudfrontBackend',
+        'DISTRIBUTION_ID': os.environ.get('CLOUDFRONT_DISTRIBUTION_ID', ''),
+    },
+}
+{% endblock %}

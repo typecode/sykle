@@ -1,0 +1,12 @@
+{% block etc %}
+{{ super() }}
+CELERY_BROKER_URL = 'sqs://{}:{}@'.format(
+    os.environ.get('SQS_AWS_ACCESS_KEY_ID', ''),
+    os.environ.get('SQS_AWS_SECRET_ACCESS_KEY', '')
+)
+
+CELERY_QUEUE_PREFIX = os.environ.get('CELERY_QUEUE_PREFIX', '')
+CELERY_BROKER_TRANSPORT = 'sqs'
+CELERY_BROKER_TRANSPORT_OPTIONS = {'queue_name_prefix': CELERY_QUEUE_PREFIX + '-'}
+
+{% endblock %}

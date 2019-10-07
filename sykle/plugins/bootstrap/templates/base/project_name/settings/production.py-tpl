@@ -1,0 +1,24 @@
+{% block production_imports %}
+from .base import *  # noqa: F403,F401
+{% endblock %}
+
+DEBUG = False
+
+ENV = 'production'
+
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+AWS_REGION_NAME = os.environ.get('AWS_REGION_NAME', 'us-east-1')
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.environ['RDS_DB_NAME'],
+        'USER': os.environ['RDS_USERNAME'],
+        'PASSWORD': os.environ['RDS_PASSWORD'],
+        'HOST': os.environ['RDS_HOSTNAME'],
+        'PORT': os.environ['RDS_PORT'],
+    }
+}
+
+{% block etc %}{% endblock %}
