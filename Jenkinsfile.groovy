@@ -7,6 +7,7 @@ node {
   ps = new PipelineSteps()
 
   ps.checkout()
+  deploy()
   test()
   if (env.BRANCH_NAME == 'master') {
     deploy()

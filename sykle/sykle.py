@@ -9,7 +9,7 @@ class CommandException(Exception):
 class Sykle():
     """Class for programatically invoking Sykle."""
 
-    version = '0.6.0'
+    version = '0.6.1'
 
     def __init__(self, config, debug=False):
         self.config = config
@@ -118,7 +118,7 @@ class Sykle():
             # NB: all images that get deployed, or that we want to use to test
             #     deployments locally, should be prod. That means all dev
             #     and test images should forcefully ignore the deployment arg
-            kwargs.pop('deployment')
+            kwargs.pop('deployment', None)
             self.dc(input=['build'] + input, docker_type=docker_type, **kwargs)
 
     def up(self, input=[], **kwargs):
