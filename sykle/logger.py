@@ -87,17 +87,17 @@ class FancyLogger(logging.Logger):
 
             self.haloHandler.releaseHalo()
 
-    def warn(self, msg):
-        super().warn(yellow(msg))
+    def warn(self, msg, *args, **kwargs):
+        super().warn(yellow(msg), *args, **kwargs)
 
-    def error(self, msg):
-        super().error(red(msg))
+    def error(self, msg, *args, **kwargs):
+        super().error(red(msg), *args, **kwargs)
 
-    def exception(self, msg):
-        super().exception(red(msg))
+    def exception(self, msg, *args, **kwargs):
+        super().exception(red(msg), *args, **kwargs)
 
-    def critical(self, msg):
-        super().critical(red(msg))
+    def critical(self, msg, *args, **kwargs):
+        super().critical(red(msg), *args, **kwargs)
 
-    def info(self, msg):
-        super().info(green(msg))
+    def info(self, msg, *args, **kwargs):
+        super().info(green(msg), *args, **kwargs)
