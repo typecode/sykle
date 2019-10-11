@@ -9,7 +9,7 @@ class CommandException(Exception):
 class Sykle():
     """Class for programatically invoking Sykle."""
 
-    version = '0.6.0'
+    version = '0.6.1'
 
     def __init__(self, config, debug=False):
         self.config = config
