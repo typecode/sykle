@@ -105,8 +105,8 @@ def _get_docker_type(args):
 def use_run_file():
     logger.warn(
         """========================UPGRADE===========================
-                         Legacy run.sh detected!                  
-          Will try to run commands through ./run.sh until removed 
+                         Legacy run.sh detected!
+          Will try to run commands through ./run.sh until removed
         =========================================================="""
     )
     time.sleep(1)
@@ -131,6 +131,7 @@ def process_args(args):
         Config.init(enable_print=True)
         return
     elif args['plugins']:
+        plugins = Plugins.list()
         if args['install']:
             logger.info('Installing plugins:')
             for plugin_name, plugin_dir in plugins.items():
@@ -138,7 +139,6 @@ def process_args(args):
                 plugin_dir.install_requirements()
             return
         logger.info('Available plugins:')
-        plugins = Plugins.list()
         for plugin_name in plugins.keys():
             logger.info('  {}'.format(plugin_name))
     elif args['config']:
