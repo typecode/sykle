@@ -2,6 +2,7 @@
 
 install:
 	pip3 install -e .
+	syk plugins install
 
 clean:
 	rm -rf build/
