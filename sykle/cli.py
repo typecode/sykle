@@ -74,7 +74,10 @@ from .plugin_utils import Plugins
 from .config import Config
 from .sykle import Sykle, CommandException
 from .call_subprocess import call_subprocess, CancelException, NonZeroReturnCodeException
+from .logger import FancyLogger
 
+logging.setLoggerClass(FancyLogger)
+logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
