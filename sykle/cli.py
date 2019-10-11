@@ -74,7 +74,10 @@ from .plugin_utils import Plugins
 from .config import Config
 from .sykle import Sykle, CommandException
 from .call_subprocess import call_subprocess, CancelException, NonZeroReturnCodeException
+from .logger import FancyLogger
 
+logging.setLoggerClass(FancyLogger)
+logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
@@ -84,9 +87,10 @@ def _load_config(args):
     try:
         return Config.from_file(config_name)
     except Config.ConfigFileNotFoundException:
-        message = """Config file %s does not exist!
-            You can create an empty config by running:
-            \tsyk init""" % config_name
+        message = """
+Config file %s does not exist!
+You can create an empty config by running:
+\tsyk init""" % config_name
         logger.critical(message)
     except Config.ConfigFileDecodeException as e:
         logger.critical('Config Decode Error: %s' % e)
@@ -104,10 +108,10 @@ def _get_docker_type(args):
 
 def use_run_file():
     logger.warn(
-        """========================UPGRADE===========================
-                         Legacy run.sh detected!
-          Will try to run commands through ./run.sh until removed
-        =========================================================="""
+        "========================UPGRADE==========================="
+        "                 Legacy run.sh detected!                  "
+        "  Will try to run commands through ./run.sh until removed "
+        "=========================================================="
     )
     time.sleep(1)
 
