@@ -9,7 +9,7 @@ class CommandException(Exception):
 class Sykle():
     """Class for programatically invoking Sykle."""
 
-    version = '0.6.2'
+    version = '0.6.3'
 
     def __init__(self, config, debug=False):
         self.config = config
@@ -18,6 +18,11 @@ class Sykle():
     def _run_commands(self, commands, exec=False, input=[], **kwargs):
         modified_kwargs = {**kwargs}
         docker_type = modified_kwargs.pop('docker_type', None)
+
+        env = modified_kwargs.get('env', {})
+        deployment = modified_kwargs.get('deployment')
+        if deployment:
+            env['DEPLOYMENT'] = deployment
 
         for command in commands:
             command.input += input
@@ -38,7 +43,7 @@ class Sykle():
                             **modified_kwargs
                         )
                 else:
-                    self.call_subprocess(command.input)
+                    self.call_subprocess(command.input, env=env)
             except NonZeroReturnCodeException:
                 raise CommandException("Command {} failed".format(command))
 
