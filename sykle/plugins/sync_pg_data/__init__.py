@@ -92,12 +92,15 @@ class Plugin(IPlugin):
 
         return args
 
+    def ensure_dump_dir(self):
+        if not os.path.isdir(self.dump_dir):
+            os.makedirs(self.dump_dir)
+
     def dump(self, location, dump_file, debug=False):
         """
         Dumps data from the given location (no contraints/tables, just data)
         """
-        if not os.path.isdir(self.dump_dir):
-            os.makedirs(self.dump_dir)
+        self.ensure_dump_dir()
 
         args = self._get_location_args(location)
         print('Dumping "{}" to "{}"...'.format(location, dump_file))
@@ -154,7 +157,7 @@ class Plugin(IPlugin):
         self.check_write_permissions(location)
         args = self._get_location_args(location)
 
-        print('Droping "{}"...'.format(location))
+        print('Dropping "{}"...'.format(location))
         call_subprocess(
             command=[
                 'docker', 'run',
