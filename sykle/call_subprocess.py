@@ -1,5 +1,7 @@
-import subprocess
+import subprocess as _subprocess
 import os
+from functools import wraps
+from contextlib import ContextDecorator
 from sykle.config import Config
 
 
@@ -55,12 +57,31 @@ def call_subprocess(command, env=None, debug=False, target=None):
 
     try:
         if env:
-            p = subprocess.Popen(full_command, env=full_env, shell=True)
+            p = _subprocess.Popen(full_command, env=full_env, shell=True)
         else:
-            p = subprocess.Popen(full_command, shell=True)
+            p = _subprocess.Popen(full_command, shell=True)
         p.wait()
         if p.returncode != 0:
             raise NonZeroReturnCodeException(process=p)
     except KeyboardInterrupt:
         p.wait()
         raise CancelException()
+
+
+class SubprocessContext(ContextDecorator):
+    def __enter__(self, *args, **kwargs):
+        pass
+
+    def __call__(self, get_cmd):
+        @wraps(get_cmd)
+        def inner(*args, **kwargs):
+            with self._recreate_cm():
+                cmd = get_cmd(*args, **kwargs)
+                return call_subprocess(cmd)
+        return inner
+
+    def __exit__(self, *args):
+        pass
+
+
+subprocess = SubprocessContext()
