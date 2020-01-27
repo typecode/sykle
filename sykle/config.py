@@ -2,6 +2,13 @@ import os
 import json
 import collections
 import dotenv
+import logging
+
+from sykle.logger import FancyLogger
+
+
+logging.setLoggerClass(FancyLogger)
+logger = logging.getLogger(__name__)
 
 
 class CommandList(list):
@@ -38,16 +45,11 @@ class Command:
 class DeploymentConfig:
     @staticmethod
     def from_json(obj):
-        return DeploymentConfig(
-            target=obj.get('target'),
-            env_file=obj.get('env_file'),
-            docker_vars=obj.get('docker_vars')
-        )
+        return DeploymentConfig(**obj)
 
-    def __init__(self, target, env_file, docker_vars={}):
-        self.target = target
-        self.env_file = env_file
-        self.docker_vars = docker_vars
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 
 class Config:
@@ -400,7 +402,7 @@ class ConfigV2(Config):
                 'Unknown deployment "{}"'.format(name)
             )
         if not deployment_json.get('target'):
-            raise Config.InvalidDeploymentException(
+            logger.warn(
                 'Deployment "{}" has no target!'.format(name)
             )
 
