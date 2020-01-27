@@ -50,7 +50,7 @@ class DeploymentConfig:
         self.docker_vars = docker_vars
 
 
-class Config():
+class Config:
     REQUIRED_VERSION = 2
     FILENAME = '.sykle.json'
 
@@ -135,6 +135,10 @@ class Config():
 
     @property
     def e2e_commands(self):
+        raise NotImplementedError()
+
+    @property
+    def preunittest_commands(self):
         raise NotImplementedError()
 
     @property
@@ -347,6 +351,10 @@ class ConfigV2(Config):
     @property
     def default_service(self):
         return self.raw.get('default_service')
+
+    @property
+    def preunittest_commands(self):
+        return CommandList.from_json(self.raw.get('preunittest', []))
 
     @property
     def unittest_commands(self):

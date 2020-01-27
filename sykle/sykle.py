@@ -48,17 +48,10 @@ class Sykle():
                 raise CommandException("Command {} failed".format(command))
 
     def _run_tests(self, commands, input=[], service=None, fast=False):
-        if not fast:
-            self.build(docker_type='test')
-
         commands = commands.for_service(service) if service else commands
-
         self._run_commands(
             commands, docker_type='test', exec=fast, input=input
         )
-
-        if not fast:
-            self.down(docker_type='test')
 
     def call_docker_compose(self, *args, **kwargs):
         return call_docker_compose(*args, **kwargs)
@@ -143,8 +136,21 @@ class Sykle():
             **kwargs
         )
 
+    def preunittest(self):
+        self._run_commands(
+            self.config.preunittest_commands,
+            docker_type='test'
+        )
+
     def unittest(self, input=[], service=None, fast=False):
+        if not fast:
+            self.build(docker_type='test')
+
+        self.preunittest()
         self._run_tests(self.config.unittest_commands, input, service, fast)
+
+        if not fast:
+            self.down(docker_type='test')
 
     def e2e(self, input=[], service=None, fast=False):
         self._run_tests(self.config.e2e_commands, input, service, fast)

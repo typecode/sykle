@@ -141,10 +141,10 @@ def process_args(args):
             for plugin_name, plugin_dir in plugins.items():
                 logger.info('  {}'.format(plugin_name))
                 plugin_dir.install_requirements()
-            return
         logger.info('Available plugins:')
         for plugin_name in plugins.keys():
             logger.info('  {}'.format(plugin_name))
+        return
     elif args['config']:
         Config.print_example()
         return
