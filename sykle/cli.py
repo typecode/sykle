@@ -20,7 +20,7 @@ Usage:
   syk plugins
   syk plugins install
   syk config
-  syk [--debug] [--config=<file>] [--deployment=<name>] [INPUT ...]
+  syk [--debug] [--test | --prod] [--config=<file>] [--deployment=<name>] [INPUT ...]
 
 Option
   -h --help               Show help info
@@ -246,7 +246,7 @@ def process_args(args):
         input = input[1:] if len(input) > 1 else []
         plugins = Plugins(config=config, sykle=sykle)
         if config.has_alias(cmd):
-            sykle.run_alias(alias=cmd, input=input, deployment=deployment)
+            sykle.run_alias(alias=cmd, input=input, docker_type=docker_type, deployment=deployment)
         elif plugins.exists(cmd):
             plugins.run(cmd)
         else:

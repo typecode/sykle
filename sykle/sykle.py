@@ -223,8 +223,8 @@ class Sykle():
             docker_type='prod-build', deployment=deployment
         )
 
-    def run_alias(self, alias, input=[], deployment=None):
+    def run_alias(self, alias, input=[], **kwargs):
         self._run_commands(
             [self.config.get_alias_command(alias, input=input)],
-            deployment=deployment, exec=False
+            **kwargs
         )

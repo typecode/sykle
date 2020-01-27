@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 class CommandList(list):
     @staticmethod
     def from_json(arr):
-        return list(map(lambda obj: Command.from_json(obj), arr))
+        return CommandList(map(lambda obj: Command.from_json(obj), arr))
 
     def for_service(self, service):
-        return list(filter(lambda command: command.service == service, self))
+        return CommandList(filter(lambda command: command.service == service, self))
 
 
 class Command:
@@ -78,7 +78,7 @@ class Config:
         pass
 
     @staticmethod
-    def print_example(self):
+    def print_example():
         print(ConfigV2.CONFIG_FILE_EXAMPLE)
 
     @staticmethod
