@@ -2,15 +2,22 @@ import os
 import json
 import collections
 import dotenv
+import logging
+
+from sykle.logger import FancyLogger
+
+
+logging.setLoggerClass(FancyLogger)
+logger = logging.getLogger(__name__)
 
 
 class CommandList(list):
     @staticmethod
     def from_json(arr):
-        return list(map(lambda obj: Command.from_json(obj), arr))
+        return CommandList(map(lambda obj: Command.from_json(obj), arr))
 
     def for_service(self, service):
-        return list(filter(lambda command: command.service == service, self))
+        return CommandList(filter(lambda command: command.service == service, self))
 
 
 class Command:
@@ -38,19 +45,14 @@ class Command:
 class DeploymentConfig:
     @staticmethod
     def from_json(obj):
-        return DeploymentConfig(
-            target=obj.get('target'),
-            env_file=obj.get('env_file'),
-            docker_vars=obj.get('docker_vars')
-        )
+        return DeploymentConfig(**obj)
 
-    def __init__(self, target, env_file, docker_vars={}):
-        self.target = target
-        self.env_file = env_file
-        self.docker_vars = docker_vars
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 
-class Config():
+class Config:
     REQUIRED_VERSION = 2
     FILENAME = '.sykle.json'
 
@@ -76,7 +78,7 @@ class Config():
         pass
 
     @staticmethod
-    def print_example(self):
+    def print_example():
         print(ConfigV2.CONFIG_FILE_EXAMPLE)
 
     @staticmethod
@@ -135,6 +137,10 @@ class Config():
 
     @property
     def e2e_commands(self):
+        raise NotImplementedError()
+
+    @property
+    def preunittest_commands(self):
         raise NotImplementedError()
 
     @property
@@ -349,6 +355,10 @@ class ConfigV2(Config):
         return self.raw.get('default_service')
 
     @property
+    def preunittest_commands(self):
+        return CommandList.from_json(self.raw.get('preunittest', []))
+
+    @property
     def unittest_commands(self):
         return CommandList.from_json(self.raw.get('unittest', []))
 
@@ -392,7 +402,7 @@ class ConfigV2(Config):
                 'Unknown deployment "{}"'.format(name)
             )
         if not deployment_json.get('target'):
-            raise Config.InvalidDeploymentException(
+            logger.warn(
                 'Deployment "{}" has no target!'.format(name)
             )
 
