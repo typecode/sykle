@@ -1,5 +1,6 @@
-import subprocess as _subprocess
 import os
+import traceback
+import subprocess as _subprocess
 from functools import wraps
 from contextlib import ContextDecorator
 from sykle.config import Config
@@ -10,9 +11,11 @@ class CancelException(Exception):
 
 
 class NonZeroReturnCodeException(Exception):
-    def __init__(self, process):
+    def __init__(self, process, stacktrace='', command=''):
         self.process = process
         self.message = 'Process returned a non zero returncode'
+        self.stacktrace = ''.join(stacktrace)
+        self.command = command
 
     def __str__(self):
         return self.message
@@ -61,14 +64,20 @@ def call_subprocess(command, env=None, debug=False, target=None):
         else:
             p = _subprocess.Popen(full_command, shell=True)
         p.wait()
+
         if p.returncode != 0:
-            raise NonZeroReturnCodeException(process=p)
+            raise NonZeroReturnCodeException(
+                process=p, stacktrace=traceback.format_stack(),
+                command=full_command
+            )
     except KeyboardInterrupt:
         p.wait()
         raise CancelException()
 
 
 class SubprocessContext(ContextDecorator):
+    """Wraps the `call_subprocess` function for use as a context
+    decorator."""
     def __enter__(self, *args, **kwargs):
         pass
 
@@ -82,6 +91,39 @@ class SubprocessContext(ContextDecorator):
 
     def __exit__(self, *args):
         pass
+
+
+class SubprocessExceptionHandler:
+    """Utility for collecting exceptions and raising a `SystemExit`
+    exception with those exceptions' stacktraces. Ex:
+
+        exception_handler = SubprocessExceptionHandler()
+
+        for subprocess in subprocesses_that_throw_exceptions:
+            try:
+                subprocess()
+            except NonZeroReturnCodeException as e:
+                exception_handler.push(e)
+
+        exception_handler.exit_with_stacktraces()
+    """
+    def __init__(self):
+        self.exc_stack = []
+
+    def push(self, exc):
+        self.exc_stack.append(exc)
+
+    def exit_with_stacktraces(self):
+        # Gather the errors' stack traces and return
+        # them in a single final error.
+        if len(self.exc_stack):
+            stacktraces = '\n'.join([
+                '%s\n%s' % (exc.command, exc.stacktrace)
+                for exc in self.exc_stack
+            ])
+
+            # Status code defaults to 1 when we pass a string.
+            raise SystemExit(stacktraces)
 
 
 subprocess = SubprocessContext()
