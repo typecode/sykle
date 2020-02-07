@@ -1,4 +1,7 @@
-from .call_subprocess import call_subprocess, NonZeroReturnCodeException
+from .call_subprocess import (
+    call_subprocess, NonZeroReturnCodeException,
+    SubprocessExceptionHandler
+)
 from .call_docker_compose import call_docker_compose
 
 
@@ -24,6 +27,8 @@ class Sykle():
         if deployment:
             env['DEPLOYMENT'] = deployment
 
+        exception_handler = SubprocessExceptionHandler()
+
         for command in commands:
             command.input += input
             try:
@@ -44,8 +49,10 @@ class Sykle():
                         )
                 else:
                     self.call_subprocess(command.input, env=env)
-            except NonZeroReturnCodeException:
-                raise CommandException("Command {} failed".format(command))
+            except NonZeroReturnCodeException as e:
+                exception_handler.push(e)
+
+        exception_handler.exit_with_stacktraces()
 
     def _run_tests(self, commands, input=[], service=None, fast=False):
         commands = commands.for_service(service) if service else commands
@@ -57,7 +64,7 @@ class Sykle():
         return call_docker_compose(*args, **kwargs)
 
     def call_subprocess(self, *args, **kwargs):
-        return call_subprocess(*args, **kwargs, debug=self.debug)
+        call_subprocess(*args, **kwargs, debug=self.debug)
 
     def dc(self, input, docker_type='dev', deployment=None, local_test=False):
         """
