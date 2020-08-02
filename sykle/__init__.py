@@ -1,3 +1,1 @@
-from .sykle import Sykle
-
-__version__ = Sykle.version
+__version__ = '0.6.4'

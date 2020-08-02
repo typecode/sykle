@@ -1,4 +1,4 @@
-from sykle import Sykle
+from sykle.sykle import Sykle
 from sykle.config import ConfigV2
 from unittest.mock import MagicMock
 import unittest
