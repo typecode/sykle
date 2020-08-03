@@ -4,5 +4,6 @@ exclude .coverage
 exclude htmlcov
 exclude installers
 include README.md
+include sykle/plugins/**/requirements.txt
 prune .git
 recursive-exclude *.egg-info *

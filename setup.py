@@ -27,8 +27,9 @@ setup(
     ],
     test_suite='nose.collector',
     packages=find_packages(
-        exclude=('test',)
+        exclude=('test',),
     ),
+    package_data={'sykle': ['plugins/**/requirements.txt']},
     entry_points={
         'console_scripts': [
             'syk=sykle.cli:main',
