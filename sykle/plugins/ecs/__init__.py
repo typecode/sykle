@@ -11,21 +11,21 @@ Description:
 
 Example .sykle.json:
   {
-    "plugins": {
-      "ecs": {
-        "production": {
-          "cluster": "foo-production",
-          "docker_vars": {
-            "BACKEND_IMAGE": "*****.amazonaws.com/foo-backend",
-            "BUILD_NUMBER": "latest"
-          }
+    "deployments": {
+      "production": {
+        "cluster": "foo-production",
+        "env_file": ".env.production",
+        "docker_vars": {
+          "BACKEND_IMAGE": "*****.amazonaws.com/foo-backend",
+          "BUILD_NUMBER": "latest"
         }
-        "staging": {
-          "cluster": "foo-staging",
-          "docker_vars": {
-            "BACKEND_IMAGE": "*****.amazonaws.com/foo-backend",
-            "BUILD_NUMBER": "latest"
-          }
+      },
+      "staging": {
+        "cluster": "foo-staging",
+        "env_file": ".env.staging",
+        "docker_vars": {
+          "BACKEND_IMAGE": "*****.amazonaws.com/foo-backend",
+          "BUILD_NUMBER": "latest"
         }
       }
     }

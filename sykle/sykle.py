@@ -1,3 +1,4 @@
+from . import __version__
 from .call_subprocess import (
     call_subprocess, NonZeroReturnCodeException,
     SubprocessExceptionHandler
@@ -12,7 +13,7 @@ class CommandException(Exception):
 class Sykle():
     """Class for programatically invoking Sykle."""
 
-    version = '0.6.3'
+    version = __version__
 
     def __init__(self, config, debug=False):
         self.config = config
