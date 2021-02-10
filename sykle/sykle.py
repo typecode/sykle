@@ -34,7 +34,8 @@ class Sykle():
             command.input += input
             try:
                 if command.service:
-                    if exec:
+                    # FIXME: change "exec" to "use_exec" so we don't override exec keyword
+                    if exec or command.use_exec:
                         self.dc_exec(
                             input=command.input,
                             service=command.service,

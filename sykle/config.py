@@ -26,16 +26,18 @@ class Command:
         return Command(
             input=obj.get('command'),
             service=obj.get('service'),
-            docker_type=obj.get('env', 'dev')
+            docker_type=obj.get('env', 'dev'),
+            use_exec=obj.get('use_exec', False)
         )
 
-    def __init__(self, input, service=None, docker_type='dev'):
+    def __init__(self, input, service=None, docker_type='dev', use_exec=False):
         self.service = service
         self.input = input.split(' ') if type(input) == str else input
         self.docker_type = docker_type
+        self.use_exec = use_exec
 
     def __str__(self):
-        return "(Service: \"{}\", Input: \"{}\", Env: \"{}\")".format(
+        return "(Service: \"{}\", Input: \"{}\", Env: \"{}\", Exec: \"{}\")".format(
             self.service,
             ' '.join(self.input),
             self.docker_type
@@ -264,7 +266,13 @@ class ConfigV2(Config):
           // when env is specified, alias is run using the corresponding
           // docker compose file
           "env": "test"
-        }
+        },
+        "flush-cache": {
+            "service": "redis",
+            "command": "redis-cli FLUSHALL",
+            // will execute the command in the running container
+            "use_exec": true
+        },
     },
     // defines settings specific to plugins
     "plugins": {
