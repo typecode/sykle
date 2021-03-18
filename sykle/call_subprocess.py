@@ -125,5 +125,9 @@ class SubprocessExceptionHandler:
             # Status code defaults to 1 when we pass a string.
             raise SystemExit(stacktraces)
 
+    def exit_without_stacktraces(self):
+        if len(self.exc_stack):
+            raise SystemExit(1)
+
 
 subprocess = SubprocessContext()

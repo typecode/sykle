@@ -54,7 +54,10 @@ class Sykle():
             except NonZeroReturnCodeException as e:
                 exception_handler.push(e)
 
-        exception_handler.exit_with_stacktraces()
+        if self.debug:
+            exception_handler.exit_with_stacktraces()
+        else:
+            exception_handler.exit_without_stacktraces()
 
     def _run_tests(self, commands, input=[], service=None, fast=False):
         commands = commands.for_service(service) if service else commands
