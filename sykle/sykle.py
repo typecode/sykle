@@ -165,7 +165,13 @@ class Sykle():
             self.down(docker_type='test')
 
     def e2e(self, input=[], service=None, fast=False):
+        if not fast:
+            self.build(docker_type='test')
+
         self._run_tests(self.config.e2e_commands, input, service, fast)
+
+        if not fast:
+            self.down(docker_type='test')
 
     def push(self, deployment):
         """Pushes docker images"""
