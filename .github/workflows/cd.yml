@@ -13,4 +13,3 @@ jobs:
 
       - name: Deploy
         run: sudo make install
-      
