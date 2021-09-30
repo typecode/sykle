@@ -11,6 +11,15 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.6
+      
+      - name: Install requirements from all requirements.txt files
+        run: |
+          INSTALL_COMMAND="pip3 install"
+          for file in sykle/plugins/**/requirements.txt; do
+            if [ ! -e "$file" ]; then continue; fi
+            INSTALL_COMMAND="$INSTALL_COMMAND -r $file"
+          done
+          eval $INSTALL_COMMAND
 
       - name: Checkout repo
         uses: actions/checkout@v2
