@@ -42,6 +42,6 @@ def call_docker_compose(
             input = [input[0]] + opts + input[1:]
 
     return call_subprocess(
-        ['docker-compose'] + project_command + ['-f', dc_file] + input,
+        ['docker compose'] + project_command + ['-f', dc_file] + input,
         debug=debug, env=docker_vars, target=target
     )
