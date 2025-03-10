@@ -1,19 +1,19 @@
 # sykle
 
-Sykle is a cli tool for calling commonly used commands in docker-compose projects.
+Sykle is a cli tool for calling commonly used commands in Docker Compose projects.
 
 #### What sykle does
 
-- Enforces 3 docker-compose environments: `dev`, `test`, and `prod`
+- Enforces 3 Docker Compose environments: `dev`, `test`, and `prod`
 - Provides commands for spinning up dev, running tests, and deploying to prod
-  - (Assumes you are deploying to a single remote instance running docker-compose)
-- Allows you to write aliases for commonly used commands that run on specific docker-compose services
-- Provides additional commonly used devops commands (which may or may not run through docker-compose) via plugins
+  - (Assumes you are deploying to a single remote instance running Docker Compose)
+- Allows you to write aliases for commonly used commands that run on specific Docker Compose services
+- Provides additional commonly used devops commands (which may or may not run through Docker Compose) via plugins
 
 #### What sykle does not do
 
 - Does not spin up remote instances (may add Terraform in the future to do this)
-- Does not generate DockerFiles, Docker-Compose files, etc
+- Does not generate Dockerfiles, Docker Compose files, etc
 - Does not replace standard devops tools
   - (plugins should delegate to other tools)
 
@@ -21,7 +21,7 @@ Sykle is a cli tool for calling commonly used commands in docker-compose project
 
 - `python 3.4` (may work on earlier versions of 3, but not tested. Plugins do NOT work in python version 2.7)
 - `docker` (locally and on deployment target)
-- `docker-compose` (locally and on deployment target)
+- `docker compose` (locally and on deployment target)
 - `ssh`
 - `scp`
 
@@ -41,7 +41,7 @@ Because sykle tries to make as few assumptions about your project as possible, y
 
 #### Docker Compose
 
-Sykle uses 4 different docker-compose configurations:
+Sykle uses 4 different Docker Compose configurations:
 
 - `docker-compose.yml` for development
 - `docker-compose.test.yml` for testing
@@ -52,7 +52,7 @@ These separate configurations allow you to tweak how your projects run in those 
 
 #### .sykle.json
 
-In addition to your `docker-compose` files, you'll need a `.sykle.json`. An example detailing how to build a config file can be viewed from the cli via `syk config`
+In addition to your Docker Compose files, you'll need a `.sykle.json`. An example detailing how to build a config file can be viewed from the cli via `syk config`
 
 ### Usage
 
@@ -144,4 +144,4 @@ Global plugins are the same as local plugins, but they are added to the `plugins
 - [x] Fallback to `./run.sh` if it exists and `.sykle.json` does not
 - [ ] User aliases/way to share aliases
 - [ ] Terraform support
-- [ ] Revisit whether `docker-compose` files can/should be shared
+- [ ] Revisit whether Docker Compose files can/should be shared
