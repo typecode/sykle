@@ -24,9 +24,9 @@ def call_docker_compose(
     project_command = ['-p', '{}-{}'.format(project_name, type)]
 
     if env_file:
-        # NB: as of this comment, docker-compose does not have an
-        #     --env-file option. If it did, we would use it here.
-        #     See: https://github.com/docker/compose/issues/6170
+        # NB: docker compose has an --env-file option, but we're manually
+        #     parsing the env file here for more control over how variables
+        #     are passed to different commands
         env = dotenv.dotenv_values(env_file)
         if input[0] == 'build':
             opts = []
@@ -42,6 +42,6 @@ def call_docker_compose(
             input = [input[0]] + opts + input[1:]
 
     return call_subprocess(
-        ['docker-compose'] + project_command + ['-f', dc_file] + input,
+        ['docker', 'compose'] + project_command + ['-f', dc_file] + input,
         debug=debug, env=docker_vars, target=target
     )
