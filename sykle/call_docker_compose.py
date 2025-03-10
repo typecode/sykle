@@ -21,7 +21,7 @@ def call_docker_compose(
 
     opts = []
     project_command = []
-    project_command = ['-p', '{}-{}'.format(project_name, type)]
+    project_command = ['--project-name', '{}-{}'.format(project_name, type)]
 
     if env_file:
         # NB: docker compose has an --env-file option, but we're manually
